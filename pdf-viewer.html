@@ -2,459 +2,416 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Viewer PDF & Image</title>
+<title>Viewer v8 - Siram Mandiri</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&family=Poppins:wght@400;700&family=Dancing+Script:wght@600&display=swap" rel="stylesheet">
 <style>
-  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Arial, sans-serif; }
-  body { background: #f4f6f9; color: #333; padding: 16px; overflow-y: auto; height: 100vh; position: relative; }
-
-  .toolbar { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
-  .toolbar h2 { font-size: 18px; margin-right: 8px; }
-  .folder-path { font-size: 12px; color: #666; background: #fff; border: 1px solid #e0e0e0; border-radius: 6px; padding: 6px 10px; flex: 1; min-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  button { cursor: pointer; border: none; border-radius: 6px; padding: 8px 14px; font-size: 13px; font-weight: 600; }
-  .btn-primary { background: #1a73e8; color: #fff; }
-  .btn-primary:hover { background: #1558b0; }
-  .btn-secondary { background: #eee; color: #333; }
-  .btn-secondary:hover { background: #ddd; }
-  .btn-file { background: #ea4335; color: #fff; }
-  .btn-file:hover { background: #c5221f; }
-
-  #status-msg { font-size: 13px; color: #888; margin-bottom: 10px; min-height: 18px; }
-
-  .drop-zone { border: 2px dashed #bbb; border-radius: 8px; padding: 10px; text-align: center; font-size: 13px; color: #666; background: #fff; margin-bottom: 14px; transition: background .2s, border-color .2s; }
-
-  #drag-overlay { display: none; position: fixed; inset: 0; background: rgba(234, 67, 53, 0.85); z-index: 200; align-items: center; justify-content: center; color: #fff; font-size: 20px; font-weight: 600; border: 4px dashed #fff; pointer-events: none; }
-  #drag-overlay.active { display: flex; }
-
-  .file-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
-  .file-card { background: #fff; border: 1px solid #e0e0e0; border-radius: 10px; padding: 10px; cursor: pointer; transition: box-shadow .15s, transform .15s; display: flex; flex-direction: column; align-items: center; text-align: center; }
-  .file-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,0.1); transform: translateY(-2px); }
-  .file-icon { font-size: 34px; margin-bottom: 6px; }
-  .file-name { font-size: 12px; font-weight: 600; word-break: break-all; line-height: 1.3; }
-  .file-meta { font-size: 10px; color: #999; margin-top: 4px; }
-
-  .empty-state { text-align: center; color: #999; padding: 60px 20px; font-size: 14px; }
-
-  /* Modal Preview */
-  #modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.65); z-index: 100; align-items: center; justify-content: center; padding: 20px; }
-  #modal-overlay.active { display: flex; }
-  #modal-box { background: #fff; border-radius: 12px; max-width: 1000px; width: 100%; max-height: 92vh; overflow-y: auto; display: flex; flex-direction: column; }
-  #modal-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 1px solid #eee; }
-  #modal-header h3 { font-size: 15px; word-break: break-all; padding-right: 10px; }
-  #modal-close { background: none; font-size: 20px; color: #888; padding: 4px 10px; }
-  #modal-close:hover { color: #333; }
-  #modal-body { padding: 18px; display: flex; flex-direction: column; gap: 14px; }
-
-  .zoom-toolbar { display: flex; align-items: center; gap: 12px; font-size: 12px; color: #666; background: #f8f9fa; padding: 8px 12px; border-radius: 6px; border: 1px solid #eee; }
-  .zoom-toolbar button { padding: 4px 10px; font-size: 12px; }
-
-  /* Container Viewer dengan Fitur Drag Pan */
-  #preview-viewport { background: #2b2b2b; border-radius: 8px; border: 1px solid #444; overflow: auto; max-height: 550px; text-align: center; cursor: grab; user-select: none; position: relative; padding: 20px; min-height: 250px; }
-  #preview-viewport:active { cursor: grabbing; }
-  
-  #preview-container { display: inline-flex; flex-direction: column; align-items: center; gap: 15px; transform-origin: top center; }
-  #preview-container canvas, #preview-container img { display: block; box-shadow: 0 4px 12px rgba(0,0,0,0.3); background: #fff; pointer-events: none; }
-
-  .loading-line { font-size: 14px; color: #888; padding: 4px; text-align: center; }
+*{box-sizing:border-box;margin:0;padding:0;font-family:'Segoe UI',Tahoma,Arial,sans-serif}
+body{background:#f4f6f9;color:#333;padding:14px;height:100vh;overflow:auto}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.folder-path{font-size:12px;color:#666;background:#fff;border:1px solid #e0e0e0;border-radius:6px;padding:6px 10px;flex:1;min-width:180px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+button{cursor:pointer;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:600}
+.btn-primary{background:#1a73e8;color:#fff}.btn-secondary{background:#eee;color:#333}.btn-file{background:#ea4335;color:#fff}.btn-success{background:#1e8e3e;color:#fff}.btn-warning{background:#f9ab00;color:#202124}.btn-dark{background:#202124;color:#fff}
+#status-msg{font-size:12px;color:#888;margin-bottom:8px}
+.drop-zone{border:2px dashed #bbb;border-radius:8px;padding:9px;text-align:center;font-size:12px;color:#666;background:#fff;margin-bottom:10px}
+#drag-overlay{display:none;position:fixed;inset:0;background:rgba(234,67,53,.9);z-index:500;align-items:center;justify-content:center;color:#fff;font-size:22px;font-weight:700} #drag-overlay.active{display:flex}
+.file-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.file-card{background:#fff;border:1px solid #e0e0e0;border-radius:10px;padding:10px;cursor:pointer;text-align:center}
+#modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:100;align-items:center;justify-content:center;padding:12px} #modal-overlay.active{display:flex}
+#modal-box{background:#fff;border-radius:12px;max-width:1250px;width:100%;max-height:96vh;display:flex;flex-direction:column;overflow:hidden}
+#modal-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #eee;gap:8px}
+#modal-header h3{font-size:13px;flex:1;word-break:break-all}
+#modal-body{padding:10px;display:flex;flex-direction:column;gap:8px;overflow:hidden;flex:1}
+.bar{display:flex;align-items:center;gap:6px;font-size:11px;padding:7px 10px;border-radius:8px;flex-wrap:wrap}
+.bar-zoom{background:#f8f9fa;border:1px solid #eee}.bar-convert{background:#e8f0fe;border:1px solid #c2d8ff}.bar-edit{background:#fef7e0;border:1px solid #f9d976;display:none}.bar-edit.active{display:flex}
+.bar-edit .group{display:flex;align-items:center;gap:6px;padding:5px 8px;background:#fff;border-radius:6px;border:1px solid #f0e0a0;flex-wrap:wrap}
+input[type="color"]{width:26px;height:26px;border:none;padding:0;cursor:pointer}
+input[type="range"]{width:60px}
+select{padding:5px 7px;border-radius:6px;border:1px solid #ccc;font-size:11px;background:#fff}
+.tool-btn{padding:6px 10px;font-size:11px;border:1px solid #ddd}.tool-btn.active{background:#1a73e8!important;color:#fff!important;border-color:#1a73e8}
+#preview-viewport{background:#2b2b2b;border-radius:8px;border:1px solid #444;overflow:auto;flex:1;min-height:420px;text-align:center;padding:18px;position:relative}
+#preview-viewport.edit-mode{cursor:crosshair}
+#preview-container{display:inline-flex;flex-direction:column;align-items:center;gap:18px;transform-origin:top center;min-width:200px;min-height:200px}
+.edit-wrapper{position:relative;display:block;background:#fff;box-shadow:0 4px 18px rgba(0,0,0,.5);line-height:0;overflow:hidden}
+.edit-wrapper img.base{display:block}.edit-wrapper canvas.base{display:block}
+.edit-wrapper canvas.draw{position:absolute;left:0;top:0;width:100%;height:100%;touch-action:none}
+.edit-wrapper .text-layer{position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none}
+.text-box{position:absolute;padding:2px 6px;border:1px dashed #1a73e8;background:rgba(255,255,255,.9);pointer-events:auto;cursor:move;white-space:pre-wrap;word-break:break-word;line-height:1.2}
+.text-box.selected{outline:2px solid #ea4335}
+#text-input-pop{display:none;position:fixed;z-index:400;background:#fff;border:1px solid #ccc;border-radius:10px;padding:10px;box-shadow:0 8px 24px rgba(0,0,0,.25);width:320px}
+#text-input-pop textarea{width:100%;height:70px;padding:7px;font-size:13px;border:1px solid #ccc;border-radius:6px}
+.workflow-hint{background:#e8f5e9;border:1px solid #a5d6a7;color:#2e7d32;padding:6px 10px;border-radius:6px;font-size:11px;font-weight:600}
+.color-label{font-size:10px;font-weight:700;color:#555;display:flex;flex-direction:column;align-items:center;gap:2px}
 </style>
 </head>
 <body>
 
-<div id="drag-overlay">📄 / 🖼️ Lepaskan File PDF atau Gambar di sini</div>
+<div id="drag-overlay">📄 Lepaskan file</div>
 
 <div class="toolbar">
-  <h2>📄 Previewer PDF & Image</h2>
-  <div class="folder-path" id="folder-path-label">Belum ada folder dipilih</div>
-  <button class="btn-file" id="btn-pilih-file">📂 Buka File</button>
-  <button class="btn-primary" id="btn-pilih-folder">📁 Pilih Folder</button>
-  <button class="btn-secondary" id="btn-refresh">🔄 Refresh</button>
-
-  <input type="file" id="input-file-manual" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif,.webp,.tiff,.svg" style="display:none;" />
-  <input type="file" id="input-folder-manual" webkitdirectory directory multiple style="display:none;" />
+  <h2 style="font-size:16px;">📄 Previewer v8 - Siram Mandiri</h2>
+  <div class="folder-path" id="folder-path-label">Belum ada folder</div>
+  <button class="btn-file" id="btn-pilih-file">📂 File</button>
+  <button class="btn-primary" id="btn-pilih-folder">📁 Folder</button>
+  <button class="btn-secondary" id="btn-refresh">🔄</button>
+  <input type="file" id="input-file-manual" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif,.webp,.svg" style="display:none" />
 </div>
 
-<div class="drop-zone">
-  📥 Tarik & lepaskan file PDF atau Gambar (BMP, JPG, PNG, WEBP, TIFF, dll.) ke sini
-</div>
-
-<div id="status-msg"></div>
-
+<div class="drop-zone">Model baru: <b>1. Gambar kotak kosong dulu → 2. Pilih ember 🪣 → 3. Klik di dalam kotak untuk siram warna</b></div>
+<div id="status-msg">Pilih file untuk mulai</div>
 <div class="file-grid" id="file-grid"></div>
-<div class="empty-state" id="empty-state" style="display:none;">Tidak ada file PDF atau Gambar di folder ini.</div>
 
 <div id="modal-overlay">
   <div id="modal-box">
     <div id="modal-header">
       <h3 id="modal-title">-</h3>
-      <button id="modal-close">✕</button>
+      <div style="display:flex;gap:6px;">
+        <button class="btn-dark" id="btn-toggle-edit">✏️ Mode Edit</button>
+        <button class="btn-secondary" id="modal-close">✕</button>
+      </div>
     </div>
     <div id="modal-body">
-      <div class="zoom-toolbar">
-        <span>🔍 Scroll mouse untuk Zoom | Klik & Geser untuk Panning</span>
-        <button class="btn-secondary" id="btn-zoom-out">➖ Zoom -</button>
-        <span id="zoom-percent-label" style="font-weight:600;">100%</span>
-        <button class="btn-secondary" id="btn-zoom-in">➕ Zoom +</button>
-        <button class="btn-zoom-reset" id="btn-zoom-reset">↩️ Reset</button>
+      <div class="bar bar-zoom">
+        <span>🔍 Zoom | Drag geser</span>
+        <button class="btn-secondary" id="btn-zoom-out">➖</button>
+        <span id="zoom-percent-label" style="font-weight:700;">100%</span>
+        <button class="btn-secondary" id="btn-zoom-in">➕</button>
+        <button class="btn-secondary" id="btn-zoom-reset">Reset</button>
+        <span id="page-hint" style="margin-left:auto;font-weight:700;color:#1a73e8;"></span>
       </div>
 
-      <div id="preview-viewport">
-        <div id="preview-container"></div>
+      <div class="bar bar-convert" id="convert-toolbar" style="display:none;">
+        <span id="convert-label" style="font-weight:700;color:#1a73e8;">🔄</span>
+        <div id="img-to-pdf-group" style="display:none;gap:6px;align-items:center;">
+          <button class="btn-success" id="btn-save-as-pdf">💾 PDF</button>
+          <select id="pdf-page-size"><option value="auto">Otomatis</option><option value="a4">A4</option></select>
+        </div>
+        <div id="pdf-to-img-group" style="display:none;gap:6px;align-items:center;">
+          <select id="img-format-select"><option value="png">PNG</option><option value="jpeg">JPG</option></select>
+          <button class="btn-warning" id="btn-save-single-img">🖼️ Halaman Ini</button>
+          <button class="btn-success" id="btn-save-all-imgs">📦 ZIP</button>
+        </div>
       </div>
+
+      <div class="bar bar-edit" id="edit-toolbar">
+        <div class="workflow-hint">LANGKAH 1: Gambar bentuk kosong → LANGKAH 2: Siram isi</div>
+        <div class="group">
+          <button class="btn-secondary tool-btn" data-tool="pen">✏️ Pen</button>
+          <button class="btn-secondary tool-btn" data-tool="eraser">🧽 Hapus</button>
+          <button class="btn-secondary tool-btn active" data-tool="rect">⬜ Kotak Kosong</button>
+          <button class="btn-secondary tool-btn" data-tool="circle">⭕ Bulat Kosong</button>
+          <button class="btn-secondary tool-btn" data-tool="line">📏 Garis</button>
+          <button class="btn-secondary tool-btn" data-tool="arrow">➡️ Panah</button>
+          <button class="btn-secondary tool-btn" data-tool="text">T Text</button>
+        </div>
+        <div class="group" style="background:#ffebee; border-color:#ef9a9a;">
+          <span style="font-weight:800;color:#c62828;">LANGKAH 2 - SIRAM:</span>
+          <button class="btn-secondary tool-btn" data-tool="bucket" style="background:#ffcdd2;font-weight:800;">🪣 Klik Siram Warna</button>
+          <div class="color-label"><span>Warna Garis</span><input type="color" id="color-picker" value="#000000"></div>
+          <div class="color-label"><span>Warna Siram</span><input type="color" id="fill-color-picker" value="#ffeb3b"></div>
+          <span>Tebal</span><input type="range" id="size-picker" min="1" max="40" value="3"><span id="size-label">3px</span>
+        </div>
+        <div class="group">
+          <span>Isi Siram:</span>
+          <select id="fill-pattern-picker">
+            <option value="solid" selected>🎨 Solid Penuh</option>
+            <option value="hatch-diagonal">↘️ Arsir \ (icon kamu)</option>
+            <option value="hatch-diagonal2">↗️ Arsir /</option>
+            <option value="hatch-cross">✖️ Silang X</option>
+            <option value="hatch-grid">#️⃣ Grid</option>
+            <option value="dots">⚫ Titik</option>
+            <option value="dots-dense">⚫⚫ Titik Rapat</option>
+          </select>
+          <span>Opasitas</span><input type="range" id="opacity-picker" min="10" max="100" value="100"><span id="opacity-label">100%</span>
+          <span style="font-size:10px;color:#666;">Klik di DALAM kotak/bulat untuk isi</span>
+        </div>
+        <div class="group">
+          Font<select id="font-family-picker"><option value="Arial, sans-serif">Arial</option><option value="'Poppins', sans-serif">Poppins</option><option value="'Dancing Script', cursive">Tulisan Tangan</option></select>
+          <input type="range" id="font-size-picker" min="10" max="150" value="26"><span id="font-size-label">26px</span>
+          <button class="btn-secondary" id="btn-undo">↩️ Undo</button>
+          <button class="btn-secondary" id="btn-clear">🗑️ Clear</button>
+          <button class="btn-success" id="btn-save-edited-img">💾 Gambar</button>
+          <button class="btn-primary" id="btn-save-edited-pdf">💾 PDF</button>
+        </div>
+      </div>
+
+      <div id="preview-viewport"><div id="preview-container"><div style="color:#888;padding:40px;">Belum ada file</div></div></div>
     </div>
   </div>
 </div>
 
-<script>
-let rpcCounter = 0;
-const rpcPending = new Map();
+<div id="text-input-pop">
+  <div style="font-weight:700;margin-bottom:6px;">Tambah Teks</div>
+  <div id="text-preview" style="border:1px dashed #ccc;padding:8px;border-radius:6px;min-height:28px;margin-bottom:8px;word-break:break-word;">Contoh Teks</div>
+  <textarea id="text-input-area" placeholder="Ketik teks..."></textarea>
+  <div style="display:flex;gap:8px;margin-top:8px;justify-content:flex-end;"><button class="btn-secondary" id="btn-text-cancel">Batal</button><button class="btn-primary" id="btn-text-ok">Tambah</button></div>
+</div>
 
-window.addEventListener('message', (event) => {
-  if (event.data && event.data.action === 'invokeAPIResult') {
-    const pending = rpcPending.get(event.data.requestId);
-    if (pending) {
-      rpcPending.delete(event.data.requestId);
-      pending(event.data.result);
+<script>
+let rpcCounter=0; const rpcPending=new Map();
+window.addEventListener('message', e=>{ if(e.data && e.data.action==='invokeAPIResult'){ const p=rpcPending.get(e.data.requestId); if(p){ rpcPending.delete(e.data.requestId); p(e.data.result);} } });
+function callAPI(api,method,...args){ return new Promise(res=>{ const id=++rpcCounter; rpcPending.set(id,res); window.parent.postMessage({action:'invokeAPI',api,method,args,requestId:id},'*'); }); }
+const fileBrowserAPI={ selectFolder:()=>callAPI('fileBrowserAPI','selectFolder'), getDefaultFolder:()=>callAPI('fileBrowserAPI','getDefaultFolder'), listFiles:(f)=>callAPI('fileBrowserAPI','listFiles',f), readFileAsBase64:(p)=>callAPI('fileBrowserAPI','readFileAsBase64',p), };
+
+const PDF_EXTS=['.pdf'], IMAGE_EXTS=['.jpg','.jpeg','.png','.bmp','.gif','.webp','.svg'], ALL_EXTS=[...PDF_EXTS,...IMAGE_EXTS];
+const fileGrid=document.getElementById('file-grid'), statusMsg=document.getElementById('status-msg'), folderPathLabel=document.getElementById('folder-path-label'), inputFileManual=document.getElementById('input-file-manual');
+const previewViewport=document.getElementById('preview-viewport'), previewContainer=document.getElementById('preview-container'), modalOverlay=document.getElementById('modal-overlay'), modalTitle=document.getElementById('modal-title');
+const convertToolbar=document.getElementById('convert-toolbar'), editToolbar=document.getElementById('edit-toolbar'), btnToggleEdit=document.getElementById('btn-toggle-edit'), zoomLabel=document.getElementById('zoom-percent-label');
+
+let currentFileName='', currentZoom=1, editMode=false, currentTool='rect', currentColor='#000000', fillColor='#ffeb3b', currentSize=3, currentFontSize=26, currentFontFamily='Arial, sans-serif', currentFontStyle='normal', fillPattern='solid', fillOpacity=100, activeWrapper=null, currentFolder=null;
+
+function updateZoom(){ previewContainer.style.transform=`scale(${currentZoom})`; zoomLabel.textContent=Math.round(currentZoom*100)+'%'; }
+function formatSize(b){ if(b<1024) return b+' B'; if(b<1024*1024) return (b/1024).toFixed(1)+' KB'; return (b/(1024*1024)).toFixed(1)+' MB'; }
+function hexToRgba(hex, opacity){ const r=parseInt(hex.slice(1,3),16), g=parseInt(hex.slice(3,5),16), b=parseInt(hex.slice(5,7),16); return {r,g,b,a:Math.round(opacity*255/100), css:`rgba(${r},${g},${b},${opacity/100})`}; }
+
+async function loadFolder(p){ currentFolder=p; folderPathLabel.textContent=p; fileGrid.innerHTML='<div style="color:#888;">Memuat...</div>'; try{ const files=await fileBrowserAPI.listFiles(p); const filtered=files.filter(f=>ALL_EXTS.includes('.'+f.name.split('.').pop().toLowerCase())); fileGrid.innerHTML=''; filtered.forEach(file=>{ const ext='.'+file.name.split('.').pop().toLowerCase(); const card=document.createElement('div'); card.className='file-card'; card.innerHTML=`<div style="font-size:32px;">${PDF_EXTS.includes(ext)?'📄':'🖼️'}</div><div style="font-size:11px;font-weight:600;word-break:break-all;">${file.name}</div><div style="font-size:10px;color:#999;">${ext.toUpperCase()} • ${formatSize(file.size)}</div>`; card.onclick=async()=>{ try{ const b64=await fileBrowserAPI.readFileAsBase64(file.path); openPreviewCommon(file.name,ext,b64); }catch(e){ alert(e.message);} }; fileGrid.appendChild(card); }); statusMsg.textContent=`${filtered.length} file`; }catch(e){ statusMsg.textContent='Gagal: '+e.message; } }
+function openPreviewFromFileObject(file){ const ext='.'+file.name.split('.').pop().toLowerCase(); const r=new FileReader(); r.onload=e=>openPreviewCommon(file.name,ext,e.target.result.split(',')[1]); r.readAsDataURL(file); }
+function openPreviewCommon(name,ext,b64){
+  currentFileName=name; previewContainer.innerHTML='<div style="color:#aaa;padding:30px;">⏳ Memuat...</div>'; modalTitle.textContent=name; modalOverlay.classList.add('active');
+  convertToolbar.style.display='none'; document.getElementById('img-to-pdf-group').style.display='none'; document.getElementById('pdf-to-img-group').style.display='none';
+  editMode=false; editToolbar.classList.remove('active'); previewViewport.classList.remove('edit-mode'); btnToggleEdit.textContent='✏️ Mode Edit'; btnToggleEdit.className='btn-dark'; currentZoom=1; updateZoom();
+  if(PDF_EXTS.includes(ext)) renderPdfFromBase64(b64); else renderImageFromBase64(b64,ext);
+}
+function renderImageFromBase64(b64, ext){
+  let mime='image/jpeg'; if(ext==='.png') mime='image/png'; else if(ext==='.webp') mime='image/webp'; else if(ext==='.gif') mime='image/gif'; else if(ext==='.bmp') mime='image/bmp'; else if(ext==='.svg') mime='image/svg+xml';
+  const img=new Image(); img.onload=()=>{ previewContainer.innerHTML=''; const w=createWrapperFromImage(img); previewContainer.appendChild(w); convertToolbar.style.display='flex'; document.getElementById('convert-label').textContent='🔄 Gambar → PDF:'; document.getElementById('img-to-pdf-group').style.display='flex'; document.getElementById('page-hint').textContent=`${img.naturalWidth} x ${img.naturalHeight}`; }; img.src=`data:${mime};base64,${b64}`;
+}
+async function renderPdfFromBase64(b64){
+  previewContainer.innerHTML=''; try{ const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i); const pdf=await pdfjsLib.getDocument({data:bytes}).promise; for(let n=1;n<=pdf.numPages;n++){ const page=await pdf.getPage(n); const vp=page.getViewport({scale:1.7}); const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height; const ctx=c.getContext('2d'); await page.render({canvasContext:ctx, viewport:vp}).promise; const w=createWrapperFromCanvas(c,n); previewContainer.appendChild(w); } convertToolbar.style.display='flex'; document.getElementById('convert-label').textContent='🔄 PDF → Gambar:'; document.getElementById('pdf-to-img-group').style.display='flex'; document.getElementById('page-hint').textContent=`${pdf.numPages} halaman`; }catch(e){ previewContainer.innerHTML=`<div style="color:#ff6b6b;padding:20px;">Gagal PDF: ${e.message}</div>`; }
+}
+function createWrapperFromImage(imgEl){
+  const w=imgEl.naturalWidth||800, h=imgEl.naturalHeight||600;
+  const wrapper=document.createElement('div'); wrapper.className='edit-wrapper'; wrapper.style.width=w+'px'; wrapper.style.height=h+'px';
+  imgEl.className='base'; imgEl.style.width=w+'px'; imgEl.style.height=h+'px'; imgEl.draggable=false; wrapper.appendChild(imgEl);
+  const draw=document.createElement('canvas'); draw.className='draw'; draw.width=w; draw.height=h; wrapper.appendChild(draw);
+  const textLayer=document.createElement('div'); textLayer.className='text-layer'; wrapper.appendChild(textLayer);
+  setupDraw(wrapper, draw, textLayer, w, h); return wrapper;
+}
+function createWrapperFromCanvas(baseCanvas, pageNum){
+  const w=baseCanvas.width, h=baseCanvas.height;
+  const wrapper=document.createElement('div'); wrapper.className='edit-wrapper'; wrapper.style.width=w+'px'; wrapper.style.height=h+'px'; wrapper.dataset.page=pageNum||1;
+  baseCanvas.className='base'; wrapper.appendChild(baseCanvas);
+  const draw=document.createElement('canvas'); draw.className='draw'; draw.width=w; draw.height=h; wrapper.appendChild(draw);
+  const textLayer=document.createElement('div'); textLayer.className='text-layer'; wrapper.appendChild(textLayer);
+  setupDraw(wrapper, draw, textLayer, w, h); return wrapper;
+}
+
+function createPatternFill(ctx, patternType, color, opacity){
+  if(patternType==='solid') return hexToRgba(color, opacity).css;
+  const pCanvas=document.createElement('canvas'); const size=20; pCanvas.width=size; pCanvas.height=size;
+  const pCtx=pCanvas.getContext('2d'); pCtx.clearRect(0,0,size,size);
+  pCtx.strokeStyle=hexToRgba(color, opacity).css; pCtx.fillStyle=hexToRgba(color, opacity).css; pCtx.lineWidth=1.8;
+  if(patternType==='hatch-diagonal'){ pCtx.beginPath(); pCtx.moveTo(0,size); pCtx.lineTo(size,0); pCtx.stroke(); }
+  else if(patternType==='hatch-diagonal2'){ pCtx.beginPath(); pCtx.moveTo(0,0); pCtx.lineTo(size,size); pCtx.stroke(); }
+  else if(patternType==='hatch-cross'){ pCtx.beginPath(); pCtx.moveTo(0,0); pCtx.lineTo(size,size); pCtx.moveTo(size,0); pCtx.lineTo(0,size); pCtx.stroke(); }
+  else if(patternType==='hatch-grid'){ pCtx.strokeRect(0,0,size,size); }
+  else if(patternType==='dots'){ pCtx.beginPath(); pCtx.arc(size/2,size/2,2,0,Math.PI*2); pCtx.fill(); }
+  else if(patternType==='dots-dense'){ pCtx.beginPath(); pCtx.arc(5,5,1.5,0,Math.PI*2); pCtx.arc(15,5,1.5,0,Math.PI*2); pCtx.arc(5,15,1.5,0,Math.PI*2); pCtx.arc(15,15,1.5,0,Math.PI*2); pCtx.fill(); }
+  return ctx.createPattern(pCanvas, 'repeat');
+}
+
+function setupDraw(wrapper, drawCanvas, textLayer, w, h){
+  const ctx=drawCanvas.getContext('2d'); const history=[]; function push(){ if(history.length>50) history.shift(); history.push(ctx.getImageData(0,0,w,h)); } push();
+  wrapper._ctx=ctx; wrapper._draw=drawCanvas; wrapper._textLayer=textLayer; wrapper._history=history; wrapper._w=w; wrapper._h=h;
+  let drawing=false, startPos=null, snapshot=null;
+  function pos(e){ const r=drawCanvas.getBoundingClientRect(); const sx=w/r.width, sy=h/r.height; const cx=e.touches?e.touches[0].clientX:e.clientX; const cy=e.touches?e.touches[0].clientY:e.clientY; return {x:Math.floor((cx-r.left)*sx), y:Math.floor((cy-r.top)*sy), clientX:cx, clientY:cy}; }
+
+  function drawEmptyShape(type, from, to){
+    ctx.strokeStyle=currentColor; ctx.lineWidth=currentSize; ctx.lineCap='round'; ctx.lineJoin='round';
+    ctx.globalCompositeOperation='source-over';
+    if(type==='rect'){
+      ctx.strokeRect(from.x,from.y,to.x-from.x,to.y-from.y);
+    } else if(type==='circle'){
+      const rx=Math.abs(to.x-from.x)/2, ry=Math.abs(to.y-from.y)/2;
+      const cx=from.x+(to.x-from.x)/2, cy=from.y+(to.y-from.y)/2;
+      ctx.beginPath(); ctx.ellipse(cx,cy,rx,ry,0,0,Math.PI*2); ctx.stroke();
+    } else if(type==='line'){
+      ctx.beginPath(); ctx.moveTo(from.x,from.y); ctx.lineTo(to.x,to.y); ctx.stroke();
+    } else if(type==='arrow'){
+      const angle=Math.atan2(to.y-from.y, to.x-from.x);
+      ctx.beginPath(); ctx.moveTo(from.x,from.y); ctx.lineTo(to.x,to.y); ctx.stroke();
+      const headLen=15+currentSize*2;
+      ctx.beginPath(); ctx.moveTo(to.x,to.y);
+      ctx.lineTo(to.x-headLen*Math.cos(angle-Math.PI/6), to.y-headLen*Math.sin(angle-Math.PI/6));
+      ctx.moveTo(to.x,to.y);
+      ctx.lineTo(to.x-headLen*Math.cos(angle+Math.PI/6), to.y-headLen*Math.sin(angle+Math.PI/6));
+      ctx.stroke();
     }
   }
-});
 
-function callAPI(api, method, ...args) {
-  return new Promise((resolve) => {
-    if (window.top === window.self) {
-      resolve({ success: false, error: 'Fitur ini hanya berjalan di dalam aplikasi desktop.' });
+  drawCanvas.addEventListener('mousedown', e=>{
+    if(!editMode) return; activeWrapper=wrapper; const p=pos(e);
+    if(currentTool==='text'){ openTextPopup(p.clientX,p.clientY,p,wrapper); return; }
+    if(currentTool==='bucket'){
+      // === SIRAM MANDIRI: isi area yang diklik ===
+      const composite=document.createElement('canvas'); composite.width=w; composite.height=h; const cctx=composite.getContext('2d');
+      const base=wrapper.querySelector('.base');
+      if(base.tagName==='CANVAS') cctx.drawImage(base,0,0,w,h); else cctx.drawImage(base,0,0,w,h);
+      cctx.drawImage(drawCanvas,0,0,w,h);
+      const compData=cctx.getImageData(0,0,w,h).data;
+      const drawData=ctx.getImageData(0,0,w,h);
+      const dData=drawData.data;
+      const visited=new Uint8Array(w*h);
+      const stack=[[p.x,p.y]];
+      const getIdx=(x,y)=>(y*w+x)*4;
+      if(p.x<0||p.x>=w||p.y<0||p.y>=h) return;
+      const startIdx=getIdx(p.x,p.y);
+      const sR=compData[startIdx], sG=compData[startIdx+1], sB=compData[startIdx+2];
+      const tol=35;
+      // buat layer pattern untuk siram
+      let patternFillStyle=null;
+      if(fillPattern!=='solid'){
+        patternFillStyle=createPatternFill(ctx, fillPattern, fillColor, fillOpacity);
+      }
+      // kalau solid, siapkan warna
+      const solidRgb=hexToRgba(fillColor, fillOpacity);
+      // buat canvas temp untuk pattern
+      let patternCanvas=null, patternData=null;
+      if(patternFillStyle && typeof patternFillStyle!=='string'){
+        patternCanvas=document.createElement('canvas'); patternCanvas.width=w; patternCanvas.height=h;
+        const pctx=patternCanvas.getContext('2d');
+        pctx.fillStyle=patternFillStyle; pctx.fillRect(0,0,w,h);
+        patternData=pctx.getImageData(0,0,w,h).data;
+      }
+
+      let filled=0;
+      while(stack.length && filled<w*h*0.8){
+        const [x,y]=stack.pop();
+        if(x<0||x>=w||y<0||y>=h) continue;
+        const idxPos=y*w+x; if(visited[idxPos]) continue; visited[idxPos]=1;
+        const idx=getIdx(x,y);
+        if(Math.abs(compData[idx]-sR)>tol || Math.abs(compData[idx+1]-sG)>tol || Math.abs(compData[idx+2]-sB)>tol) continue;
+        // isi pixel
+        if(patternData){
+          dData[idx]=patternData[idx]; dData[idx+1]=patternData[idx+1]; dData[idx+2]=patternData[idx+2]; dData[idx+3]=patternData[idx+3];
+        } else {
+          dData[idx]=solidRgb.r; dData[idx+1]=solidRgb.g; dData[idx+2]=solidRgb.b; dData[idx+3]=solidRgb.a;
+        }
+        filled++;
+        stack.push([x+1,y],[x-1,y],[x,y+1],[x,y-1]);
+      }
+      ctx.putImageData(drawData,0,0);
+      push();
+      statusMsg.textContent=`🪣 Disiram ${filled} pixel dengan ${fillPattern} warna ${fillColor}`;
       return;
     }
-    const requestId = 'req_' + (++rpcCounter) + '_' + Date.now();
-    rpcPending.set(requestId, resolve);
-    window.top.postMessage({ action: 'invokeAPI', requestId, api, method, args }, '*');
-    setTimeout(() => {
-      if (rpcPending.has(requestId)) {
-        rpcPending.delete(requestId);
-        resolve({ success: false, error: 'Timeout: tidak ada balasan dari aplikasi utama.' });
-      }
-    }, 15000);
-  });
-}
-
-async function callBrowserAPI(method, ...args) {
-  const envelope = await callAPI('fileBrowserAPI', method, ...args);
-  if (!envelope.success) return { __bridgeFailed: true, error: envelope.error };
-  return envelope.value;
-}
-
-const fileBrowserAPI = {
-  getDefaultFolder: async () => {
-    const v = await callBrowserAPI('getDefaultFolder');
-    return v && v.__bridgeFailed ? null : v;
-  },
-  selectFolder: async () => {
-    const v = await callBrowserAPI('selectFolder');
-    return v && v.__bridgeFailed ? null : v;
-  },
-  listFiles: async (folderPath) => {
-    const v = await callBrowserAPI('listFiles', folderPath);
-    return (v && v.__bridgeFailed) ? { success: false, error: v.error } : v;
-  },
-  readFileBase64: async (filePath) => {
-    const v = await callBrowserAPI('readFileBase64', filePath);
-    return (v && v.__bridgeFailed) ? { success: false, error: v.error } : v;
-  }
-};
-
-const PDF_EXTS = ['.pdf'];
-const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.bmp', '.gif', '.webp', '.tiff', '.tif', '.svg'];
-
-const folderLabel = document.getElementById('folder-path-label');
-const statusMsg = document.getElementById('status-msg');
-const fileGrid = document.getElementById('file-grid');
-const emptyState = document.getElementById('empty-state');
-const inputFileManual = document.getElementById('input-file-manual');
-const inputFolderManual = document.getElementById('input-folder-manual');
-
-let currentFolder = null;
-
-function formatSize(bytes) {
-  if (!bytes) return '-';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
-}
-
-function getFileIcon(ext) {
-  if (PDF_EXTS.includes(ext)) return '📄';
-  if (IMAGE_EXTS.includes(ext)) return '🖼️';
-  return '📁';
-}
-
-async function loadFolder(folderPath) {
-  currentFolder = folderPath;
-  folderLabel.textContent = folderPath || 'Belum ada folder dipilih';
-  folderLabel.title = folderPath || '';
-  if (!folderPath) { renderFiles([]); return; }
-
-  statusMsg.textContent = 'Memuat berkas PDF & Gambar...';
-  const res = await fileBrowserAPI.listFiles(folderPath);
-  if (!res || !res.success) {
-    statusMsg.textContent = 'Gagal membaca folder: ' + (res ? res.error : 'tidak diketahui');
-    renderFiles([]);
-    return;
-  }
-
-  const allowedFiles = (res.files || []).filter(f => {
-    const ext = f.ext ? f.ext.toLowerCase() : '';
-    return PDF_EXTS.includes(ext) || IMAGE_EXTS.includes(ext);
+    drawing=true; startPos=p; snapshot=ctx.getImageData(0,0,w,h);
+    if(currentTool==='pen' || currentTool==='eraser'){ ctx.beginPath(); ctx.moveTo(p.x,p.y); }
   });
 
-  statusMsg.textContent = `${allowedFiles.length} berkas ditemukan.`;
-  renderFiles(allowedFiles);
-}
-
-function renderFiles(files) {
-  fileGrid.innerHTML = '';
-  emptyState.style.display = files.length === 0 ? 'block' : 'none';
-  for (const f of files) {
-    const ext = f.ext ? f.ext.toLowerCase() : '';
-    const card = document.createElement('div');
-    card.className = 'file-card';
-    card.innerHTML = `
-      <div class="file-icon">${getFileIcon(ext)}</div>
-      <div class="file-name">${f.name}</div>
-      <div class="file-meta">${formatSize(f.size)}</div>
-    `;
-    card.addEventListener('click', () => openPreview(f));
-    fileGrid.appendChild(card);
-  }
-}
-
-// BUKA PREVIEW BERDASARKAN SYSTEM PATH ATAU RAW FILE BROWSER
-async function openPreview(file) {
-  modalTitle.textContent = file.name;
-  previewContainer.innerHTML = '<div class="loading-line" style="color:#fff;">Memuat berkas...</div>';
-  modalOverlay.classList.add('active');
-
-  if (file.rawFile) {
-    openPreviewFromFileObject(file.rawFile);
-    return;
-  }
-
-  const res = await fileBrowserAPI.readFileBase64(file.path);
-  if (!res.success) {
-    previewContainer.innerHTML = `<div class="loading-line" style="color:#ff6b6b;">Gagal membaca berkas: ${res.error}</div>`;
-    return;
-  }
-
-  const ext = '.' + file.name.split('.').pop().toLowerCase();
-  
-  if (PDF_EXTS.includes(ext)) {
-    renderPdfFromBase64(res.base64);
-  } else if (IMAGE_EXTS.includes(ext)) {
-    renderImageFromBase64(res.base64, ext);
-  }
-}
-
-// RENDER GAMBAR
-function renderImageFromBase64(base64, ext) {
-  previewContainer.innerHTML = '';
-  currentZoom = 1;
-  updateZoomTransform();
-
-  const img = document.createElement('img');
-  let mimeType = 'image/jpeg';
-  if (ext === '.png') mimeType = 'image/png';
-  else if (ext === '.gif') mimeType = 'image/gif';
-  else if (ext === '.webp') mimeType = 'image/webp';
-  else if (ext === '.bmp') mimeType = 'image/bmp';
-  else if (ext === '.svg') mimeType = 'image/svg+xml';
-
-  img.src = `data:${mimeType};base64,${base64}`;
-  img.style.maxWidth = '100%';
-  img.style.borderRadius = '4px';
-
-  previewContainer.appendChild(img);
-}
-
-// RENDER PDF
-async function renderPdfFromBase64(base64) {
-  previewContainer.innerHTML = '';
-  currentZoom = 1;
-  updateZoomTransform();
-
-  try {
-    const binStr = atob(base64);
-    const bytes = new Uint8Array(binStr.length);
-    for (let i = 0; i < binStr.length; i++) bytes[i] = binStr.charCodeAt(i);
-
-    const loadingTask = pdfjsLib.getDocument({ data: bytes });
-    const pdf = await loadingTask.promise;
-
-    for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-      const page = await pdf.getPage(pageNum);
-      const viewport = page.getViewport({ scale: 1.3 });
-
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      canvas.height = viewport.height;
-      canvas.width = viewport.width;
-
-      await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-      previewContainer.appendChild(canvas);
+  drawCanvas.addEventListener('mousemove', e=>{
+    if(!drawing || !editMode) return; const p=pos(e);
+    if(currentTool==='pen'){
+      ctx.globalCompositeOperation='source-over'; ctx.strokeStyle=currentColor; ctx.lineWidth=currentSize; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    } else if(currentTool==='eraser'){
+      ctx.globalCompositeOperation='destination-out'; ctx.lineWidth=currentSize*3; ctx.lineCap='round'; ctx.lineJoin='round';
+      ctx.lineTo(p.x,p.y); ctx.stroke(); ctx.beginPath(); ctx.moveTo(p.x,p.y);
+    } else if(['rect','circle','line','arrow'].includes(currentTool)){
+      ctx.putImageData(snapshot,0,0);
+      ctx.globalCompositeOperation='source-over';
+      drawEmptyShape(currentTool, startPos, p);
     }
-  } catch (err) {
-    previewContainer.innerHTML = `<div class="loading-line" style="color:#ff6b6b;">Gagal memproses PDF: ${err.message}</div>`;
-  }
-}
+  });
 
-// SISTEM ZOOM & PANNING UNTUK VIEWPORT PREVIEW
-const previewViewport = document.getElementById('preview-viewport');
-const previewContainer = document.getElementById('preview-container');
-const zoomLabel = document.getElementById('zoom-percent-label');
-let currentZoom = 1;
-
-function updateZoomTransform() {
-  previewContainer.style.transform = `scale(${currentZoom})`;
-  zoomLabel.textContent = Math.round(currentZoom * 100) + '%';
-}
-
-previewViewport.addEventListener('wheel', (e) => {
-  e.preventDefault();
-  const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
-  currentZoom = Math.min(Math.max(currentZoom * factor, 0.2), 10);
-  updateZoomTransform();
-}, { passive: false });
-
-document.getElementById('btn-zoom-in').addEventListener('click', () => { currentZoom = Math.min(currentZoom * 1.2, 10); updateZoomTransform(); });
-document.getElementById('btn-zoom-out').addEventListener('click', () => { currentZoom = Math.max(currentZoom / 1.2, 0.2); updateZoomTransform(); });
-document.getElementById('btn-zoom-reset').addEventListener('click', () => { currentZoom = 1; updateZoomTransform(); });
-
-// PANNING VIA KLIK KIRI TAHAN
-let isMouseDown = false;
-let startX = 0, startY = 0;
-let scrollLeft = 0, scrollTop = 0;
-
-previewViewport.addEventListener('mousedown', (e) => {
-  if (e.button !== 0) return;
-  isMouseDown = true;
-  previewViewport.style.cursor = 'grabbing';
-  startX = e.pageX - previewViewport.offsetLeft;
-  startY = e.pageY - previewViewport.offsetTop;
-  scrollLeft = previewViewport.scrollLeft;
-  scrollTop = previewViewport.scrollTop;
-});
-
-previewViewport.addEventListener('mouseleave', () => { isMouseDown = false; previewViewport.style.cursor = 'grab'; });
-previewViewport.addEventListener('mouseup', () => { isMouseDown = false; previewViewport.style.cursor = 'grab'; });
-
-previewViewport.addEventListener('mousemove', (e) => {
-  if (!isMouseDown) return;
-  e.preventDefault();
-  const x = e.pageX - previewViewport.offsetLeft;
-  const y = e.pageY - previewViewport.offsetTop;
-  previewViewport.scrollLeft = scrollLeft - (x - startX);
-  previewViewport.scrollTop = scrollTop - (y - startY);
-});
-
-// MODAL CONTROL
-const modalOverlay = document.getElementById('modal-overlay');
-const modalTitle = document.getElementById('modal-title');
-document.getElementById('modal-close').addEventListener('click', closeModal);
-modalOverlay.addEventListener('click', (e) => { if (e.target === modalOverlay) closeModal(); });
-
-function closeModal() {
-  modalOverlay.classList.remove('active');
-  previewContainer.innerHTML = '';
-}
-
-// BUKA PREVIEW DARI INPUT DIALOG / DROP EVENT
-function openPreviewFromFileObject(file) {
-  const ext = '.' + file.name.split('.').pop().toLowerCase();
-  if (!PDF_EXTS.includes(ext) && !IMAGE_EXTS.includes(ext)) {
-    alert('Format tidak didukung! Pilih berkas PDF atau Gambar.');
-    return;
-  }
-
-  modalTitle.textContent = file.name;
-  modalOverlay.classList.add('active');
-
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    const base64 = e.target.result.split(',')[1];
-    if (PDF_EXTS.includes(ext)) {
-      renderPdfFromBase64(base64);
-    } else {
-      renderImageFromBase64(base64, ext);
+  const endDraw=e=>{
+    if(!drawing) return; drawing=false;
+    if(['rect','circle','line','arrow'].includes(currentTool)){
+      const p=pos(e.changedTouches?{touches:[e.changedTouches[0]]}:e);
+      const finalP = e.clientX ? pos(e) : p;
+      if(snapshot) ctx.putImageData(snapshot,0,0);
+      ctx.globalCompositeOperation='source-over';
+      drawEmptyShape(currentTool, startPos, finalP);
+      statusMsg.textContent=`✅ Kotak kosong dibuat. Sekarang pilih 🪣 Siram dan klik di dalamnya untuk isi warna ${fillColor}`;
     }
+    ctx.beginPath(); push(); snapshot=null;
   };
-  reader.readAsDataURL(file);
+  drawCanvas.addEventListener('mouseup', endDraw);
+  drawCanvas.addEventListener('mouseleave', ()=>{ if(drawing && ['rect','circle','line','arrow'].includes(currentTool) && snapshot){ ctx.putImageData(snapshot,0,0); } drawing=false; ctx.beginPath(); });
+  drawCanvas.addEventListener('touchstart', e=>{ e.preventDefault(); const t=e.touches[0]; drawCanvas.dispatchEvent(new MouseEvent('mousedown',{clientX:t.clientX, clientY:t.clientY})); }, {passive:false});
+  drawCanvas.addEventListener('touchmove', e=>{ e.preventDefault(); const t=e.touches[0]; drawCanvas.dispatchEvent(new MouseEvent('mousemove',{clientX:t.clientX, clientY:t.clientY})); }, {passive:false});
+  drawCanvas.addEventListener('touchend', e=>{ e.preventDefault(); const t=e.changedTouches?e.changedTouches[0]:{clientX:0,clientY:0}; drawCanvas.dispatchEvent(new MouseEvent('mouseup',{clientX:t.clientX, clientY:t.clientY})); }, {passive:false});
+  wrapper.addEventListener('mouseenter', ()=>{ if(editMode) activeWrapper=wrapper; });
+  wrapper.addEventListener('click', ()=>{ activeWrapper=wrapper; });
 }
 
-// EVENT BUTTONS & DRAG OVERLAY
-document.getElementById('btn-pilih-file').addEventListener('click', () => inputFileManual.click());
-inputFileManual.addEventListener('change', (e) => {
-  if (e.target.files[0]) openPreviewFromFileObject(e.target.files[0]);
-});
+function getActiveWrapper(){ if(activeWrapper) return activeWrapper; const all=document.querySelectorAll('.edit-wrapper'); if(!all.length) return null; const vp=previewViewport; const vpRect=vp.getBoundingClientRect(); let best=all[0], bestV=-1; all.forEach(w=>{ const r=w.getBoundingClientRect(); const v=Math.max(0, Math.min(r.bottom,vpRect.bottom)-Math.max(r.top,vpRect.top)); if(v>bestV){ bestV=v; best=w; } }); return best; }
 
-// PEMILIHAN FOLDER (HYBRID DESKTOP / WEB GITHUB PAGES)
-document.getElementById('btn-pilih-folder').addEventListener('click', async () => {
-  const picked = await fileBrowserAPI.selectFolder();
-  if (picked) {
-    await loadFolder(picked);
-  } else {
-    // Fallback otomatis jika di browser / GitHub Pages
-    inputFolderManual.click();
-  }
-});
+const textPop=document.getElementById('text-input-pop'), textArea=document.getElementById('text-input-area'), textPreview=document.getElementById('text-preview');
+let pendingPos=null, pendingWrapper=null;
+function updatePreview(){ const txt=textArea.value||'Contoh Teks'; textPreview.textContent=txt; textPreview.style.fontFamily=currentFontFamily; textPreview.style.fontSize=currentFontSize+'px'; textPreview.style.color=currentColor; }
+function openTextPopup(cx,cy,pos,wrapper){ pendingPos=pos; pendingWrapper=wrapper; activeWrapper=wrapper; textPop.style.display='block'; textPop.style.left=Math.min(cx+10, window.innerWidth-330)+'px'; textPop.style.top=Math.min(cy+10, window.innerHeight-220)+'px'; textArea.value=''; updatePreview(); setTimeout(()=>textArea.focus(),50); }
+document.getElementById('btn-text-cancel').onclick=()=>{ textPop.style.display='none'; };
+document.getElementById('btn-text-ok').onclick=()=>{ const t=textArea.value; if(!t.trim()){ textPop.style.display='none'; return; } addTextBox(pendingWrapper, pendingPos.x, pendingPos.y, t, currentColor, currentFontSize, currentFontFamily, 'normal'); textPop.style.display='none'; };
+textArea.addEventListener('input', updatePreview);
+function addTextBox(wrapper, x, y, txt, color, size, fontFamily){
+  if(!wrapper) wrapper=getActiveWrapper(); if(!wrapper) return;
+  const layer=wrapper._textLayer || wrapper.querySelector('.text-layer');
+  const box=document.createElement('div'); box.className='text-box'; box.style.left=x+'px'; box.style.top=y+'px'; box.style.color=color; box.style.fontSize=size+'px'; box.style.fontFamily=fontFamily; box.textContent=txt;
+  let drag=false, sx=0, sy=0, ox=0, oy=0;
+  box.addEventListener('mousedown', e=>{ drag=true; sx=e.clientX; sy=e.clientY; ox=parseInt(box.style.left)||0; oy=parseInt(box.style.top)||0; document.querySelectorAll('.text-box').forEach(b=>b.classList.remove('selected')); box.classList.add('selected'); activeWrapper=wrapper; e.stopPropagation(); });
+  window.addEventListener('mousemove', e=>{ if(!drag) return; box.style.left=(ox+e.clientX-sx)+'px'; box.style.top=(oy+e.clientY-sy)+'px'; });
+  window.addEventListener('mouseup', ()=>drag=false);
+  box.addEventListener('contextmenu', e=>{ e.preventDefault(); if(confirm('Hapus teks?')) box.remove(); });
+  layer.appendChild(box);
+}
+function compositeWrapper(wrapper){
+  const base=wrapper.querySelector('.base'); const draw=wrapper._draw || wrapper.querySelector('canvas.draw'); const w=draw.width, h=draw.height;
+  const out=document.createElement('canvas'); out.width=w; out.height=h; const octx=out.getContext('2d');
+  octx.fillStyle='#fff'; octx.fillRect(0,0,w,h);
+  if(base.tagName==='CANVAS') octx.drawImage(base,0,0,w,h); else octx.drawImage(base,0,0,w,h);
+  octx.drawImage(draw,0,0,w,h);
+  wrapper.querySelectorAll('.text-box').forEach(b=>{
+    const bx=parseInt(b.style.left)||0, by=parseInt(b.style.top)||0, fs=parseInt(b.style.fontSize)||24;
+    const fam=b.style.fontFamily||'Arial'; octx.font=`${fs}px ${fam}`; octx.fillStyle=b.style.color||'#000'; octx.textBaseline='top';
+    b.textContent.split('\n').forEach((ln,i)=>octx.fillText(ln, bx, by + i*fs*1.2));
+  });
+  return out;
+}
 
-// PENGOLAHAN FOLDER DARI INPUT BROWSER (WEBKITDIRECTORY)
-inputFolderManual.addEventListener('change', (e) => {
-  const files = Array.from(e.target.files);
-  if (!files || files.length === 0) return;
+// controls
+btnToggleEdit.onclick=()=>{ editMode=!editMode; if(editMode){ editToolbar.classList.add('active'); previewViewport.classList.add('edit-mode'); btnToggleEdit.textContent='👁️ Preview'; btnToggleEdit.className='btn-warning'; } else { editToolbar.classList.remove('active'); previewViewport.classList.remove('edit-mode'); btnToggleEdit.textContent='✏️ Mode Edit'; btnToggleEdit.className='btn-dark'; } };
+document.querySelectorAll('.tool-btn').forEach(b=>b.onclick=()=>{ document.querySelectorAll('.tool-btn').forEach(x=>x.classList.remove('active')); b.classList.add('active'); currentTool=b.dataset.tool; previewViewport.style.cursor = currentTool==='bucket' ? 'cell' : 'crosshair'; });
+document.getElementById('color-picker').oninput=e=>{ currentColor=e.target.value; };
+document.getElementById('fill-color-picker').oninput=e=>{ fillColor=e.target.value; };
+document.getElementById('size-picker').oninput=e=>{ currentSize=parseInt(e.target.value); document.getElementById('size-label').textContent=e.target.value+'px'; };
+document.getElementById('font-family-picker').onchange=e=>{ currentFontFamily=e.target.value; };
+document.getElementById('font-size-picker').oninput=e=>{ currentFontSize=parseInt(e.target.value); document.getElementById('font-size-label').textContent=e.target.value+'px'; };
+document.getElementById('fill-pattern-picker').onchange=e=>{ fillPattern=e.target.value; };
+document.getElementById('opacity-picker').oninput=e=>{ fillOpacity=parseInt(e.target.value); document.getElementById('opacity-label').textContent=e.target.value+'%'; };
 
-  const firstPath = files[0].webkitRelativePath || '';
-  const folderName = firstPath.split('/')[0] || 'Folder Web';
+document.getElementById('btn-undo').onclick=()=>{ const w=getActiveWrapper(); if(!w||!w._history) return; const h=w._history; if(h.length>1){ h.pop(); w._ctx.putImageData(h[h.length-1],0,0); } };
+document.getElementById('btn-clear').onclick=()=>{ const w=getActiveWrapper(); if(!w) return; if(!confirm('Hapus semua?')) return; w._ctx.clearRect(0,0,w._w,w._h); w._textLayer.innerHTML=''; w._history.length=0; w._history.push(w._ctx.getImageData(0,0,w._w,w._h)); };
+document.getElementById('btn-save-edited-img').onclick=async()=>{ const wrappers=document.querySelectorAll('.edit-wrapper'); if(!wrappers.length) return; const fmt=document.getElementById('img-format-select').value; if(wrappers.length===1){ const out=compositeWrapper(wrappers[0]); const a=document.createElement('a'); a.href=out.toDataURL(fmt==='jpeg'?'image/jpeg':'image/png',0.92); a.download=`${currentFileName.replace(/\.[^/.]+$/,'')}_edited.${fmt==='jpeg'?'jpg':fmt}`; a.click(); } else { const zip=new JSZip(); const base=currentFileName.replace(/\.pdf$/i,''); for(let i=0;i<wrappers.length;i++){ const out=compositeWrapper(wrappers[i]); zip.file(`${base}_edited_${i+1}.png`, out.toDataURL('image/png').split(',')[1], {base64:true}); } const blob=await zip.generateAsync({type:'blob'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${base}_edited.zip`; a.click(); } };
+document.getElementById('btn-save-edited-pdf').onclick=()=>{ const { jsPDF }=window.jspdf; const wrappers=document.querySelectorAll('.edit-wrapper'); if(!wrappers.length) return; const first=compositeWrapper(wrappers[0]); const doc=new jsPDF({orientation:first.width>first.height?'landscape':'portrait', unit:'px', format:[first.width, first.height]}); wrappers.forEach((w,i)=>{ const out=compositeWrapper(w); if(i>0) doc.addPage([out.width,out.height], out.width>out.height?'landscape':'portrait'); doc.addImage(out.toDataURL('image/jpeg',0.92),'JPEG',0,0,out.width,out.height); }); doc.save(`${currentFileName.replace(/\.[^/.]+$/,'')}_edited.pdf`); };
+document.getElementById('btn-save-as-pdf').onclick=()=>{ const { jsPDF }=window.jspdf; const wrappers=document.querySelectorAll('.edit-wrapper'); if(!wrappers.length) return; const out=compositeWrapper(wrappers[0]); const size=document.getElementById('pdf-page-size').value; let doc; if(size==='auto'){ doc=new jsPDF({orientation:out.width>out.height?'landscape':'portrait', unit:'px', format:[out.width,out.height]}); doc.addImage(out.toDataURL('image/jpeg',0.92),'JPEG',0,0,out.width,out.height); } else { doc=new jsPDF({orientation:out.width>out.height?'landscape':'portrait', unit:'mm', format:size}); const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(), m=10, maxW=pw-m*2, maxH=ph-m*2, r=out.width/out.height; let rw=maxW, rh=rw/r; if(rh>maxH){ rh=maxH; rw=rh*r; } doc.addImage(out.toDataURL('image/jpeg',0.92),'JPEG',(pw-rw)/2,(ph-rh)/2,rw,rh); } doc.save(`${currentFileName.replace(/\.[^/.]+$/,'')}.pdf`); };
+document.getElementById('btn-save-single-img').onclick=()=>{ const w=getActiveWrapper(); if(!w) return; const fmt=document.getElementById('img-format-select').value; const out=compositeWrapper(w); const a=document.createElement('a'); a.href=out.toDataURL(fmt==='jpeg'?'image/jpeg':'image/png',0.92); a.download=`${currentFileName.replace(/\.pdf$/i,'')}_halaman.${fmt==='jpeg'?'jpg':fmt}`; a.click(); };
+document.getElementById('btn-save-all-imgs').onclick=async()=>{ const wrappers=document.querySelectorAll('.edit-wrapper'); if(!wrappers.length) return; const fmt=document.getElementById('img-format-select').value; if(wrappers.length===1) return document.getElementById('btn-save-single-img').click(); const zip=new JSZip(); const base=currentFileName.replace(/\.pdf$/i,''); wrappers.forEach((w,i)=>{ const out=compositeWrapper(w); zip.file(`${base}_halaman-${i+1}.${fmt==='jpeg'?'jpg':fmt}`, out.toDataURL('image/png').split(',')[1], {base64:true}); }); const blob=await zip.generateAsync({type:'blob'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`${base}_semua.zip`; a.click(); };
 
-  currentFolder = folderName;
-  folderLabel.textContent = folderName;
-  folderLabel.title = folderName;
+function setZoom(v){ currentZoom=v; previewContainer.style.transform=`scale(${currentZoom})`; zoomLabel.textContent=Math.round(currentZoom*100)+'%'; }
+document.getElementById('btn-zoom-in').onclick=()=>setZoom(Math.min(currentZoom*1.2,10));
+document.getElementById('btn-zoom-out').onclick=()=>setZoom(Math.max(currentZoom/1.2,0.2));
+document.getElementById('btn-zoom-reset').onclick=()=>setZoom(1);
+previewViewport.addEventListener('wheel', e=>{ if(editMode) return; e.preventDefault(); setZoom(Math.min(Math.max(currentZoom*(e.deltaY<0?1.15:1/1.15),0.2),10)); }, {passive:false});
+let isDown=false, sx=0, sy=0, sl=0, st=0;
+previewViewport.addEventListener('mousedown', e=>{ if(editMode) return; if(e.button!==0) return; isDown=true; sx=e.pageX; sy=e.pageY; sl=previewViewport.scrollLeft; st=previewViewport.scrollTop; });
+window.addEventListener('mouseup', ()=>isDown=false);
+previewViewport.addEventListener('mousemove', e=>{ if(!isDown||editMode) return; previewViewport.scrollLeft=sl-(e.pageX-sx); previewViewport.scrollTop=st-(e.pageY-sy); });
 
-  const allowedFiles = files.filter(f => {
-    const ext = '.' + f.name.split('.').pop().toLowerCase();
-    return PDF_EXTS.includes(ext) || IMAGE_EXTS.includes(ext);
-  }).map(f => ({
-    name: f.name,
-    ext: '.' + f.name.split('.').pop().toLowerCase(),
-    path: f.webkitRelativePath || f.name,
-    size: f.size,
-    rawFile: f
-  }));
-
-  statusMsg.textContent = `${allowedFiles.length} berkas ditemukan.`;
-  renderFiles(allowedFiles);
-});
-
-document.getElementById('btn-refresh').addEventListener('click', () => {
-  if (currentFolder) loadFolder(currentFolder);
-});
-
-const dragOverlay = document.getElementById('drag-overlay');
-window.addEventListener('dragover', (e) => { e.preventDefault(); dragOverlay.classList.add('active'); });
-window.addEventListener('dragleave', (e) => {
-  if (e.clientX <= 0 || e.clientY <= 0 || e.clientX >= window.innerWidth || e.clientY >= window.innerHeight) {
-    dragOverlay.classList.remove('active');
-  }
-});
-window.addEventListener('drop', (e) => {
-  e.preventDefault();
-  dragOverlay.classList.remove('active');
-  if (e.dataTransfer.files.length > 0) openPreviewFromFileObject(e.dataTransfer.files[0]);
-});
-
-(async function init() {
-  const saved = await fileBrowserAPI.getDefaultFolder();
-  if (saved) await loadFolder(saved);
-  else statusMsg.textContent = 'Pilih folder, buka file, atau tarik & lepaskan file PDF / Gambar ke sini.';
-})();
+document.getElementById('modal-close').onclick=()=>{ modalOverlay.classList.remove('active'); previewContainer.innerHTML='<div style="color:#888;padding:40px;">Belum ada file</div>'; textPop.style.display='none'; };
+modalOverlay.addEventListener('click', e=>{ if(e.target===modalOverlay){ modalOverlay.classList.remove('active'); previewContainer.innerHTML='<div style="color:#888;padding:40px;">Belum ada file</div>'; } });
+document.getElementById('btn-pilih-file').onclick=()=>inputFileManual.click();
+inputFileManual.onchange=e=>{ if(e.target.files[0]) openPreviewFromFileObject(e.target.files[0]); };
+document.getElementById('btn-pilih-folder').onclick=async()=>{ const p=await fileBrowserAPI.selectFolder(); if(p) await loadFolder(p); };
+document.getElementById('btn-refresh').onclick=()=>{ if(currentFolder) loadFolder(currentFolder); };
+const dragOverlay=document.getElementById('drag-overlay');
+window.addEventListener('dragover', e=>{ e.preventDefault(); dragOverlay.classList.add('active'); });
+window.addEventListener('dragleave', e=>{ if(e.clientX<=0||e.clientY<=0||e.clientX>=window.innerWidth||e.clientY>=window.innerHeight) dragOverlay.classList.remove('active'); });
+window.addEventListener('drop', e=>{ e.preventDefault(); dragOverlay.classList.remove('active'); if(e.dataTransfer.files[0]) openPreviewFromFileObject(e.dataTransfer.files[0]); });
+(async()=>{ const s=await fileBrowserAPI.getDefaultFolder(); if(s) await loadFolder(s); })();
 </script>
 </body>
 </html>
