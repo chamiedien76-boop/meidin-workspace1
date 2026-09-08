@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>v14 FULL - Semua Fitur + Stempel Fix</title>
+<title>v20 BANYAK FIXED - Buka Banyak File Sekaligus</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -14,7 +14,7 @@
 body{background:#f4f6f9;color:#333;padding:12px;min-height:100vh}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;background:#fff;padding:10px;border-radius:10px;border:1px solid #e0e0e0}
 button{cursor:pointer;border:none;border-radius:6px;padding:8px 12px;font-size:11px;font-weight:700}
-.btn-primary{background:#1a73e8;color:#fff}.btn-secondary{background:#eee;color:#333}.btn-file{background:#ea4335;color:#fff}.btn-success{background:#1e8e3e;color:#fff}.btn-dark{background:#202124;color:#fff}.btn-purple{background:#7c3aed;color:#fff}.btn-pink{background:#e91e63;color:#fff}.btn-warning{background:#f9ab00;color:#202124}
+.btn-primary{background:#1a73e8;color:#fff}.btn-secondary{background:#eee;color:#333}.btn-file{background:#ea4335;color:#fff}.btn-success{background:#1e8e3e;color:#fff}.btn-dark{background:#202124;color:#fff}.btn-purple{background:#7c3aed;color:#fff}.btn-pink{background:#e91e63;color:#fff}.btn-warning{background:#f9ab00;color:#202124}.btn-print{background:#0f9d58;color:#fff;position:relative;z-index:5}
 #status-msg{font-size:11px;color:#1a73e8;margin-bottom:8px;font-weight:700;background:#fff;padding:8px;border-radius:6px;border:1px solid #e0e0e0;min-height:18px}
 .drop-zone{border:3px dashed #1a73e8;border-radius:12px;padding:24px;text-align:center;font-size:13px;color:#1a73e8;background:#e8f0fe;margin-bottom:10px;cursor:pointer}
 .drop-zone.dragover{background:#d2e3fc;border-color:#ea4335}
@@ -62,11 +62,11 @@ input[type="range"]{width:50px} select{padding:4px 6px;border-radius:6px;border:
 <div id="drag-overlay">📄 Lepaskan file di sini</div>
 
 <div class="toolbar">
-  <h2 style="font-size:13px;">📄 v14 FULL - Fitur Lengkap + Stempel Fix</h2>
+  <h2 style="font-size:13px;">📄 v20 BANYAK FIXED - Buka Banyak File Tampil Semua</h2>
   <span style="font-size:10px;background:#e8f5e9;color:#2e7d32;padding:4px 8px;border-radius:20px;font-weight:700;">✅ v9 Full + Fix Bawah Tidak Terbalik</span>
   <div style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap;">
     <button class="btn-file" id="btn-pilih-file">📂 Buka File</button>
-    <button class="btn-primary" id="btn-pilih-multiple">📚 Banyak</button>
+    <button class="btn-primary" id="btn-pilih-multiple" title="Buka banyak file PDF/Gambar sekaligus, semua akan tampil">📚 Banyak (Multi)</button>
     <button class="btn-purple" id="btn-merge-open">📑 Gabung PDF</button>
   </div>
 </div>
@@ -76,11 +76,11 @@ input[type="range"]{width:50px} select{padding:4px 6px;border-radius:6px;border:
   v14: Semua fitur v9 kembali (font, pattern, opacity) + Stempel fix 12 MEI 2026 tidak jadi 6202 IEM 21
 </div>
 
-<div id="status-msg">✅ v14 FULL siap - Semua fitur lengkap + stempel fix</div>
+<div id="status-msg">✅ v20 siap - Tombol Banyak tampil semua file + Gabung PDF FIXED + Print - Semua fitur lengkap + stempel fix</div>
 
 <input type="file" id="input-file-manual" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif,.webp,.svg" style="display:none" />
 <input type="file" id="input-file-multiple" accept=".pdf,.jpg,.jpeg,.png,.bmp,.gif,.webp,.svg" multiple style="display:none" />
-<input type="file" id="input-merge-files" accept=".jpg,.jpeg,.png,.webp,.bmp" multiple style="display:none" />
+<input type="file" id="input-merge-files" accept=".pdf,.jpg,.jpeg,.png,.webp,.bmp,.gif" multiple style="display:none" />
 <input type="file" id="input-insert-image" accept=".jpg,.jpeg,.png,.webp,.bmp,.gif" style="display:none" />
 <input type="file" id="input-sig-upload" accept=".png,.jpg,.jpeg" style="display:none">
 
@@ -88,7 +88,8 @@ input[type="range"]{width:50px} select{padding:4px 6px;border-radius:6px;border:
   <div id="modal-box">
     <div id="modal-header">
       <h3 id="modal-title">-</h3>
-      <div style="display:flex;gap:6px;">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;position:relative;z-index:10;">
+        <button class="btn-print" id="btn-print" onclick="printCurrentDocument()" title="Print dokumen yang sudah diedit" style="cursor:pointer;">🖨️ Print</button>
         <button class="btn-dark" id="btn-toggle-edit">✏️ Mode Edit</button>
         <button class="btn-secondary" id="modal-close">✕ Tutup</button>
       </div>
@@ -100,6 +101,8 @@ input[type="range"]{width:50px} select{padding:4px 6px;border-radius:6px;border:
         <span id="zoom-percent-label" style="font-weight:700;">100%</span>
         <button class="btn-secondary" id="btn-zoom-in">➕</button>
         <button class="btn-secondary" id="btn-zoom-reset">Reset</button>
+        <button class="btn-print" id="btn-print-2" onclick="printCurrentDocument()" style="margin-left:8px;cursor:pointer;">🖨️ Print Dokumen</button>
+        <span style="font-size:10px;color:#666;">Ctrl+P</span>
         <span id="page-hint" style="margin-left:auto;font-weight:700;color:#1a73e8;"></span>
       </div>
       <div class="bar bar-convert" id="convert-toolbar" style="display:none;">
@@ -228,9 +231,9 @@ input[type="range"]{width:50px} select{padding:4px 6px;border-radius:6px;border:
 
 <div id="merge-modal" class="small-modal">
   <div class="small-box" style="max-width:700px;">
-    <h3>📚 Gabung Gambar Jadi 1 PDF</h3>
+    <h3>📚 Gabung PDF & Gambar Jadi 1 PDF (v19 FIXED)</h3>
     <div style="display:flex;gap:8px;flex-wrap:wrap;">
-      <button class="btn-primary" id="btn-merge-add">📂 Tambah Gambar</button>
+      <button class="btn-primary" id="btn-merge-add">📂 Tambah PDF / Gambar</button>
       <button class="btn-secondary" id="btn-merge-clear">🗑️ Kosongkan</button>
       <select id="merge-page-size"><option value="auto">Otomatis</option><option value="a4" selected>A4</option></select>
       <select id="merge-orientation"><option value="auto">Otomatis</option><option value="portrait">Portrait</option><option value="landscape">Landscape</option></select>
@@ -419,6 +422,28 @@ function compositeWrapper(wrapper){
   return out;
 }
 
+
+// PRINT FUNCTION v17 - NEW WINDOW, 100% CLICKABLE
+function printCurrentDocument(){
+  console.log('Print clicked');
+  const wrappers=document.querySelectorAll('.edit-wrapper');
+  if(!wrappers.length){ alert('Buka file dulu baru bisa print'); return; }
+  try{
+    const win=window.open('', '_blank');
+    if(!win){ alert('Pop-up diblokir browser. Izinkan pop-up untuk file ini, atau pakai Ctrl+P'); return; }
+    win.document.write('<html><head><title>Print</title><style>body{margin:0;padding:10px;background:#fff} img{width:100%;max-width:210mm;margin:0 auto 10px auto;display:block;box-shadow:0 0 5px rgba(0,0,0,0.2);page-break-after:always;page-break-inside:avoid} img:last-child{page-break-after:auto} @media print{body{padding:0} img{box-shadow:none;margin:0 auto;}} </style></head><body>');
+    wrappers.forEach((wrapper, idx)=>{
+      const out=compositeWrapper(wrapper);
+      const dataUrl=out.toDataURL('image/jpeg',0.92);
+      win.document.write('<img src="'+dataUrl+'">');
+    });
+    win.document.write('</body></html>');
+    win.document.close();
+    win.onload=function(){ setTimeout(function(){ win.focus(); win.print(); }, 500); };
+    setTimeout(function(){ try{ win.focus(); win.print(); }catch(e){} }, 1200);
+  }catch(err){ alert('Gagal print: '+err.message); }
+}
+
 // SIG
 const sigModal=document.getElementById('sig-modal'), sigCanvas=document.getElementById('sig-canvas'), sigCtx=sigCanvas.getContext('2d');
 let sigDrawing=false, sigColor='#000000', sigSize=3; sigCtx.fillStyle='#fff'; sigCtx.fillRect(0,0,sigCanvas.width,sigCanvas.height); sigCtx.lineCap='round'; sigCtx.lineJoin='round';
@@ -507,19 +532,126 @@ drawStampPreview();
 document.getElementById('btn-insert-img').onclick=()=>inputInsertImage.click();
 inputInsertImage.onchange=e=>{ const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=ev=>{ const w=getActiveWrapper(); if(!w){ alert('Buka file'); return; } addImageOverlay(w, ev.target.result, 60,60,200); }; r.readAsDataURL(f); e.target.value=''; };
 const mergeModal=document.getElementById('merge-modal'), mergeGrid=document.getElementById('merge-grid'), mergeCount=document.getElementById('merge-count');
-let mergeImages=[];
+let mergeFiles=[]; // v18: support PDF + Image
+
+async function getPdfThumbnail(pdfData){
+  try{
+    const pdf=await pdfjsLib.getDocument({data:pdfData.slice()}).promise;
+    const page=await pdf.getPage(1);
+    const vp=page.getViewport({scale:0.3});
+    const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+    const ctx=c.getContext('2d');
+    await page.render({canvasContext:ctx, viewport:vp}).promise;
+    return {thumb:c.toDataURL('image/jpeg',0.7), pages:pdf.numPages};
+  }catch(e){ return {thumb:null, pages:'?'}; }
+}
+
 document.getElementById('btn-merge-open').onclick=()=>mergeModal.classList.add('active');
 document.getElementById('btn-merge-cancel').onclick=()=>mergeModal.classList.remove('active');
-document.getElementById('btn-merge-clear').onclick=()=>{ mergeImages=[]; renderMergeGrid(); };
+document.getElementById('btn-merge-clear').onclick=()=>{ mergeFiles=[]; renderMergeGrid(); };
 document.getElementById('btn-merge-add').onclick=()=>inputMergeFiles.click();
-inputMergeFiles.onchange=e=>{ Array.from(e.target.files).forEach(file=>{ const r=new FileReader(); r.onload=ev=>{ mergeImages.push({id:Date.now()+Math.random(), src:ev.target.result, name:file.name}); renderMergeGrid(); }; r.readAsDataURL(file); }); e.target.value=''; };
-function renderMergeGrid(){ if(mergeImages.length===0){ mergeGrid.innerHTML='<div style="color:#999;padding:20px;grid-column:1/-1;text-align:center;">Belum ada gambar</div>'; mergeCount.textContent='0 gambar'; return; } mergeGrid.innerHTML=''; mergeImages.forEach((img,idx)=>{ const div=document.createElement('div'); div.className='merge-item'; div.innerHTML=`<div class="num">${idx+1}</div><div class="del">✕</div><img src="${img.src}"><div style="font-size:10px;overflow:hidden;text-overflow:ellipsis;">${img.name}</div><div style="display:flex;gap:4px;justify-content:center;margin-top:4px;"><button class="btn-secondary" style="padding:2px 6px;font-size:10px;">⬆️</button><button class="btn-secondary" style="padding:2px 6px;font-size:10px;">⬇️</button></div>`; div.querySelector('.del').onclick=()=>{ mergeImages.splice(idx,1); renderMergeGrid(); }; const btns=div.querySelectorAll('button'); btns[0].onclick=()=>{ if(idx>0){ const t=mergeImages[idx]; mergeImages[idx]=mergeImages[idx-1]; mergeImages[idx-1]=t; renderMergeGrid(); } }; btns[1].onclick=()=>{ if(idx<mergeImages.length-1){ const t=mergeImages[idx]; mergeImages[idx]=mergeImages[idx+1]; mergeImages[idx+1]=t; renderMergeGrid(); } }; mergeGrid.appendChild(div); }); mergeCount.textContent=`${mergeImages.length} gambar`; }
-document.getElementById('btn-merge-create').onclick=async()=>{
-  if(mergeImages.length===0){ alert('Tambah gambar'); return; }
-  const pageSize=document.getElementById('merge-page-size').value; const orient=document.getElementById('merge-orientation').value; const { jsPDF }=window.jspdf; let doc=null;
-  for(let i=0;i<mergeImages.length;i++){ const item=mergeImages[i]; const img=new Image(); await new Promise(r=>{ img.onload=r; img.src=item.src; }); const w=img.naturalWidth, h=img.naturalHeight; if(i===0){ if(pageSize==='auto'){ doc=new jsPDF({orientation:w>h?'landscape':'portrait', unit:'px', format:[w,h]}); } else { let o=orient; if(o==='auto') o=w>h?'landscape':'portrait'; doc=new jsPDF({orientation:o, unit:'mm', format:pageSize}); } } else { if(pageSize==='auto'){ doc.addPage([w,h], w>h?'landscape':'portrait'); } else { let o=orient; if(o==='auto') o=w>h?'landscape':'portrait'; doc.addPage(pageSize, o); } } if(pageSize==='auto'){ doc.addImage(item.src,'JPEG',0,0,w,h); } else { const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(), m=5, maxW=pw-m*2, maxH=ph-m*2, ratio=w/h; let rw=maxW, rh=rw/ratio; if(rh>maxH){ rh=maxH; rw=rh*ratio; } doc.addImage(item.src,'JPEG',(pw-rw)/2,(ph-rh)/2,rw,rh); } }
-  doc.save(`gabungan_${mergeImages.length}.pdf`); mergeModal.classList.remove('active');
+
+inputMergeFiles.onchange=e=>{
+  const files=Array.from(e.target.files);
+  files.forEach(file=>{
+    const ext=file.name.split('.').pop().toLowerCase();
+    const isPdf=file.type==='application/pdf' || ext==='pdf';
+    if(isPdf){
+      const reader=new FileReader();
+      reader.onload=async ev=>{
+        const pdfData=new Uint8Array(ev.target.result);
+        const thumbInfo=await getPdfThumbnail(pdfData);
+        mergeFiles.push({id:Date.now()+Math.random(), type:'pdf', name:file.name, data:pdfData, thumb:thumbInfo.thumb, pages:thumbInfo.pages});
+        renderMergeGrid();
+      };
+      reader.readAsArrayBuffer(file);
+    }else{
+      const reader=new FileReader();
+      reader.onload=ev=>{
+        mergeFiles.push({id:Date.now()+Math.random(), type:'image', name:file.name, src:ev.target.result});
+        renderMergeGrid();
+      };
+      reader.readAsDataURL(file);
+    }
+  });
+  e.target.value='';
 };
+
+function renderMergeGrid(){
+  if(mergeFiles.length===0){
+    mergeGrid.innerHTML='<div style="color:#999;padding:20px;grid-column:1/-1;text-align:center;">Belum ada file<br><small>Bisa pilih PDF & Gambar, campur juga bisa</small></div>';
+    mergeCount.textContent='0 file';
+    return;
+  }
+  mergeGrid.innerHTML='';
+  mergeFiles.forEach((file,idx)=>{
+    const div=document.createElement('div'); div.className='merge-item';
+    const isPdf=file.type==='pdf';
+    const icon=isPdf ? (file.thumb ? `<img src="${file.thumb}" style="border:1px solid #ea4335;"><div style="position:absolute;left:4px;bottom:4px;background:#ea4335;color:#fff;font-size:9px;padding:2px 5px;border-radius:10px;">${file.pages} hal</div>` : `<div style="height:80px;display:flex;align-items:center;justify-content:center;background:#fce8e6;border-radius:4px;font-size:30px;">📄</div><div style="font-size:9px;color:#ea4335;font-weight:700;margin-top:2px;">${file.pages} halaman</div>`) : `<img src="${file.src}">`;
+    div.innerHTML=`<div class="num">${idx+1}</div><div class="del">✕</div>${icon}<div style="font-size:10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:4px;">${file.name}</div><div style="display:flex;gap:4px;justify-content:center;margin-top:4px;"><button class="btn-secondary up-btn" style="padding:2px 6px;font-size:10px;">⬆️</button><button class="btn-secondary down-btn" style="padding:2px 6px;font-size:10px;">⬇️</button></div>`;
+    div.querySelector('.del').onclick=()=>{ mergeFiles.splice(idx,1); renderMergeGrid(); };
+    div.querySelector('.up-btn').onclick=()=>{ if(idx>0){ const t=mergeFiles[idx]; mergeFiles[idx]=mergeFiles[idx-1]; mergeFiles[idx-1]=t; renderMergeGrid(); } };
+    div.querySelector('.down-btn').onclick=()=>{ if(idx<mergeFiles.length-1){ const t=mergeFiles[idx]; mergeFiles[idx]=mergeFiles[idx+1]; mergeFiles[idx+1]=t; renderMergeGrid(); } };
+    mergeGrid.appendChild(div);
+  });
+  const totalPages=mergeFiles.reduce((sum,f)=> sum + (f.type==='pdf' ? (typeof f.pages==='number'?f.pages:1) : 1), 0);
+  mergeCount.textContent=`${mergeFiles.length} file, ${totalPages} halaman total`;
+}
+
+document.getElementById('btn-merge-create').onclick=async()=>{
+  if(mergeFiles.length===0){ alert('Tambah file PDF / Gambar dulu'); return; }
+  const pageSize=document.getElementById('merge-page-size').value;
+  const orientEl=document.getElementById('merge-orientation');
+  const orient=orientEl ? orientEl.value : 'auto';
+  const { jsPDF }=window.jspdf;
+  let doc=null;
+  const btn=document.getElementById('btn-merge-create');
+  const oldText=btn.textContent;
+  btn.textContent='⏳ Menggabungkan...'; btn.disabled=true;
+  try{
+    for(let fIdx=0; fIdx<mergeFiles.length; fIdx++){
+      const file=mergeFiles[fIdx];
+      if(file.type==='image'){
+        const img=new Image();
+        await new Promise((res,rej)=>{ img.onload=res; img.onerror=rej; img.src=file.src; });
+        const w=img.naturalWidth, h=img.naturalHeight;
+        if(!doc){
+          if(pageSize==='auto'){ doc=new jsPDF({orientation:w>h?'landscape':'portrait', unit:'px', format:[w,h]}); doc.addImage(file.src,'JPEG',0,0,w,h); }
+          else { let o=orient; if(o==='auto') o=w>h?'landscape':'portrait'; doc=new jsPDF({orientation:o, unit:'mm', format:pageSize}); const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(), m=5, maxW=pw-m*2, maxH=ph-m*2, ratio=w/h; let rw=maxW, rh=rw/ratio; if(rh>maxH){ rh=maxH; rw=rh*ratio; } doc.addImage(file.src,'JPEG',(pw-rw)/2,(ph-rh)/2,rw,rh); }
+        }else{
+          if(pageSize==='auto'){ doc.addPage([w,h], w>h?'landscape':'portrait'); doc.addImage(file.src,'JPEG',0,0,w,h); }
+          else { let o=orient; if(o==='auto') o=w>h?'landscape':'portrait'; doc.addPage(pageSize,o); const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(), m=5, maxW=pw-m*2, maxH=ph-m*2, ratio=w/h; let rw=maxW, rh=rw/ratio; if(rh>maxH){ rh=maxH; rw=rh*ratio; } doc.addImage(file.src,'JPEG',(pw-rw)/2,(ph-rh)/2,rw,rh); }
+        }
+      }else if(file.type==='pdf'){
+        const pdf=await pdfjsLib.getDocument({data:file.data.slice()}).promise;
+        for(let p=1;p<=pdf.numPages;p++){
+          const page=await pdf.getPage(p);
+          const vp=page.getViewport({scale:2.0});
+          const canvas=document.createElement('canvas'); canvas.width=vp.width; canvas.height=vp.height;
+          const ctx=canvas.getContext('2d');
+          await page.render({canvasContext:ctx, viewport:vp}).promise;
+          const imgData=canvas.toDataURL('image/jpeg',0.85);
+          const w=canvas.width, h=canvas.height;
+          if(!doc){
+            if(pageSize==='auto'){ doc=new jsPDF({orientation:w>h?'landscape':'portrait', unit:'px', format:[w,h]}); doc.addImage(imgData,'JPEG',0,0,w,h); }
+            else { let o=orient; if(o==='auto') o=w>h?'landscape':'portrait'; doc=new jsPDF({orientation:o, unit:'mm', format:pageSize}); const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(), m=0, maxW=pw-m*2, maxH=ph-m*2, ratio=w/h; let rw=maxW, rh=rw/ratio; if(rh>maxH){ rh=maxH; rw=rh*ratio; } doc.addImage(imgData,'JPEG',(pw-rw)/2,(ph-rh)/2,rw,rh); }
+          }else{
+            if(pageSize==='auto'){ doc.addPage([w,h], w>h?'landscape':'portrait'); doc.addImage(imgData,'JPEG',0,0,w,h); }
+            else { let o=orient; if(o==='auto') o=w>h?'landscape':'portrait'; doc.addPage(pageSize,o); const pw=doc.internal.pageSize.getWidth(), ph=doc.internal.pageSize.getHeight(), m=0, maxW=pw-m*2, maxH=ph-m*2, ratio=w/h; let rw=maxW, rh=rw/ratio; if(rh>maxH){ rh=maxH; rw=rh*ratio; } doc.addImage(imgData,'JPEG',(pw-rw)/2,(ph-rh)/2,rw,rh); }
+          }
+        }
+      }
+    }
+    if(doc) doc.save(`gabungan_${mergeFiles.length}file_${new Date().toISOString().slice(0,10)}.pdf`);
+    mergeModal.classList.remove('active');
+  }catch(err){
+    console.error(err);
+    alert('Gagal gabung: '+err.message);
+  }finally{
+    btn.textContent=oldText; btn.disabled=false;
+  }
+};
+
 
 // TOOLBAR EDIT
 btnToggleEdit.onclick=()=>{ editMode=!editMode; if(editMode){ editToolbar.classList.add('active'); previewViewport.classList.add('edit-mode'); btnToggleEdit.textContent='👁️ Keluar Edit'; btnToggleEdit.className='btn-warning'; } else { editToolbar.classList.remove('active'); previewViewport.classList.remove('edit-mode'); btnToggleEdit.textContent='✏️ Mode Edit'; btnToggleEdit.className='btn-dark'; } };
@@ -575,12 +707,91 @@ previewViewport.addEventListener('mousemove', e=>{ if(!isDown||editMode) return;
 document.getElementById('modal-close').onclick=()=>{ modalOverlay.classList.remove('active'); };
 modalOverlay.addEventListener('click', e=>{ if(e.target===modalOverlay) modalOverlay.classList.remove('active'); });
 
+document.addEventListener('DOMContentLoaded', function(){ const bp=document.getElementById('btn-print'); if(bp) bp.addEventListener('click', printCurrentDocument); const bp2=document.getElementById('btn-print-2'); if(bp2) bp2.addEventListener('click', printCurrentDocument); });
+setTimeout(function(){ const bp=document.getElementById('btn-print'); if(bp) bp.onclick=printCurrentDocument; const bp2=document.getElementById('btn-print-2'); if(bp2) bp2.onclick=printCurrentDocument; }, 500);
+window.addEventListener('keydown', function(e){ if((e.ctrlKey||e.metaKey) && e.key==='p'){ const modalActive=document.getElementById('modal-overlay').classList.contains('active'); if(modalActive){ e.preventDefault(); printCurrentDocument(); } } });
+
 // FILE OPEN - FIXED
 document.getElementById('btn-pilih-file').onclick=()=>inputFileManual.click();
 document.getElementById('btn-pilih-multiple').onclick=()=>inputFileMultiple.click();
 mainDropZone.onclick=()=>inputFileManual.click();
 inputFileManual.onchange=e=>{ if(e.target.files[0]) openPreviewFromFileObject(e.target.files[0]); e.target.value=''; };
-inputFileMultiple.onchange=e=>{ if(e.target.files.length){ for(let f of e.target.files){ openPreviewFromFileObject(f); break; } } e.target.value=''; };
+// v20 FIX: Tombol Banyak buka SEMUA file, bukan cuma 1
+inputFileMultiple.onchange=async e=>{
+  const files=Array.from(e.target.files);
+  if(!files.length){ e.target.value=''; return; }
+  // Clear and prepare for multiple
+  previewContainer.innerHTML='<div style="color:#aaa;padding:30px;">⏳ Memuat '+files.length+' file...</div>';
+  modalTitle.textContent=files.length+' file dipilih';
+  modalOverlay.classList.add('active');
+  convertToolbar.style.display='none';
+  document.getElementById('img-to-pdf-group').style.display='none';
+  document.getElementById('pdf-to-img-group').style.display='none';
+  editMode=false; editToolbar.classList.remove('active'); previewViewport.classList.remove('edit-mode');
+  btnToggleEdit.textContent='✏️ Mode Edit'; btnToggleEdit.className='btn-dark';
+  currentZoom=1; updateZoom();
+  previewContainer.innerHTML='';
+  let totalPages=0;
+  for(const file of files){
+    await new Promise(resolve=>{
+      const ext='.'+file.name.split('.').pop().toLowerCase();
+      const reader=new FileReader();
+      reader.onload=async ev=>{
+        const b64=ev.target.result.split(',')[1];
+        if(['.pdf'].includes(ext)){
+          try{
+            const bin=atob(b64); const bytes=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
+            const pdf=await pdfjsLib.getDocument({data:bytes.slice()}).promise;
+            for(let n=1;n<=pdf.numPages;n++){
+              const page=await pdf.getPage(n);
+              const vp=page.getViewport({scale:1.8});
+              const c=document.createElement('canvas'); c.width=vp.width; c.height=vp.height;
+              const ctx=c.getContext('2d');
+              await page.render({canvasContext:ctx, viewport:vp}).promise;
+              const w=createWrapperFromCanvas(c,n);
+              // Label file
+              const label=document.createElement('div');
+              label.textContent=file.name+' - Hal '+n;
+              label.style.cssText='background:#1a73e8;color:#fff;font-size:10px;padding:3px 8px;border-radius:4px;margin-bottom:4px;display:inline-block;';
+              const container=document.createElement('div');
+              container.style.cssText='display:flex;flex-direction:column;align-items:center;gap:4px;';
+              container.appendChild(label);
+              container.appendChild(w);
+              previewContainer.appendChild(container);
+              totalPages++;
+            }
+          }catch(err){ console.error(err); }
+        }else{
+          // image
+          let mime='image/jpeg'; if(ext==='.png') mime='image/png'; else if(ext==='.webp') mime='image/webp'; else if(ext==='.gif') mime='image/gif';
+          const img=new Image();
+          img.onload=()=>{
+            const w=createWrapperFromImage(img);
+            const label=document.createElement('div');
+            label.textContent=file.name;
+            label.style.cssText='background:#1e8e3e;color:#fff;font-size:10px;padding:3px 8px;border-radius:4px;margin-bottom:4px;display:inline-block;';
+            const container=document.createElement('div');
+            container.style.cssText='display:flex;flex-direction:column;align-items:center;gap:4px;';
+            container.appendChild(label);
+            container.appendChild(w);
+            previewContainer.appendChild(container);
+            totalPages++;
+            resolve();
+          };
+          img.onerror=()=>resolve();
+          img.src='data:'+mime+';base64,'+b64;
+          return; // resolve in onload
+        }
+        resolve();
+      };
+      reader.readAsDataURL(file);
+    });
+  }
+  document.getElementById('page-hint').textContent=files.length+' file, '+totalPages+' halaman total';
+  currentFileName=files.length+'_file_gabungan';
+  e.target.value='';
+};
+
 window.addEventListener('dragover', e=>{ e.preventDefault(); dragOverlay.classList.add('active'); });
 window.addEventListener('dragleave', e=>{ if(e.clientX<=0||e.clientY<=0||e.clientX>=window.innerWidth||e.clientY>=window.innerHeight) dragOverlay.classList.remove('active'); });
 window.addEventListener('drop', e=>{ e.preventDefault(); dragOverlay.classList.remove('active'); if(e.dataTransfer.files[0]) openPreviewFromFileObject(e.dataTransfer.files[0]); });
@@ -588,8 +799,8 @@ mainDropZone.addEventListener('dragover', e=>{ e.preventDefault(); mainDropZone.
 mainDropZone.addEventListener('dragleave', ()=>mainDropZone.classList.remove('dragover'));
 mainDropZone.addEventListener('drop', e=>{ e.preventDefault(); e.stopPropagation(); dragOverlay.classList.remove('active'); mainDropZone.classList.remove('dragover'); if(e.dataTransfer.files[0]) openPreviewFromFileObject(e.dataTransfer.files[0]); });
 
-console.log('v14 FULL loaded - semua fitur kembali + stempel fix');
-statusMsg.textContent='✅ v14 FULL siap - Semua fitur lengkap (font, pattern, opacity, siram mandiri) + stempel fix tidak terbalik';
+console.log('v17 PRINT FIXED loaded - semua fitur kembali + stempel fix');
+statusMsg.textContent='✅ v20 siap - Tombol Banyak tampil semua file + Gabung PDF FIXED + Print - Semua fitur lengkap (font, pattern, opacity, siram mandiri) + stempel fix tidak terbalik';
 </script>
 </body>
 </html>
