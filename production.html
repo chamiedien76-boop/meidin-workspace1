@@ -3483,42 +3483,75 @@ function eksporKeGambar() {
         // Opsi hapus titik sendirian - FINAL: H/V aman (horizontal/vertikal jangan hapus), diagonal hapus
     function hapusTitikSendirian(rows, rowWidth) {
         if (rows.length < 1) return rows;
-        function getColorKey(row, x) { const i=x*3; return `${row[i]},${row[i+1]},${row[i+2]}`; }
         function isColored(row, x) { const i=x*3; return row[i]!==0 || row[i+1]!==0 || row[i+2]!==0; }
         function sameColor(rowA, xA, rowB, xB) { const a=xA*3,b=xB*3; return rowA[a]===rowB[b] && rowA[a+1]===rowB[b+1] && rowA[a+2]===rowB[b+2]; }
+        // HANYA 4 arah H/V (bukan 8/diagonal) yang dianggap "terhubung" secara sah.
+        // Ini sesuai standar woven: sambungan minimal harus 2 titik horizontal
+        // ATAU vertikal. Kalau sebuah titik cuma nyambung diagonal ke titik lain
+        // yang warnanya sama (tanpa ada tetangga H/V sewarna sama sekali), titik
+        // itu tetap dianggap "sendirian" dan harus dihapus.
         const fourDir=[{dy:0,dx:-1},{dy:0,dx:1},{dy:-1,dx:0},{dy:1,dx:0}];
-        const searchOrder=[{dy:0,dx:-1},{dy:0,dx:1},{dy:-1,dx:0},{dy:1,dx:0},{dy:-1,dx:-1},{dy:-1,dx:1},{dy:1,dx:-1},{dy:1,dx:1}];
-        let currentRows=rows.map(r=>new Uint8Array(r));
-        function buildClusters4Dir(grid){
-            const h=grid.length; const visited=Array.from({length:h},()=>Array(rowWidth).fill(false)); const clusters=[];
-            for(let y=0;y<h;y++){ for(let x=0;x<rowWidth;x++){ if(!isColored(grid[y],x)||visited[y][x])continue; const queue=[{y,x}]; const cells=[]; visited[y][x]=true; let qi=0; while(qi<queue.length){ const cur=queue[qi++]; cells.push(cur); for(const d of fourDir){ const ny=cur.y+d.dy,nx=cur.x+d.dx; if(ny>=0&&ny<h&&nx>=0&&nx<rowWidth){ if(!visited[ny][nx]&&isColored(grid[ny],nx)&&sameColor(grid[cur.y],cur.x,grid[ny],nx)){ visited[ny][nx]=true; queue.push({y:ny,x:nx}); } } } } clusters.push({cells,size:cells.length}); } } return {clusters};
-        }
-        let changed=true,iter=0;
-        while(changed&&iter<8){
-            changed=false;
-            const {clusters}=buildClusters4Dir(currentRows);
-            const nextRows=currentRows.map(r=>new Uint8Array(r));
-            const singleClusters=clusters.filter(c=>c.size<2);
-            for(const cl of singleClusters){
-                const {y,x}=cl.cells[0];
-                let hasHVSame=false; for(const d of fourDir){ const ny=y+d.dy,nx=x+d.dx; if(ny>=0&&ny<currentRows.length&&nx>=0&&nx<rowWidth){ if(isColored(currentRows[ny],nx)&&sameColor(currentRows[y],x,currentRows[ny],nx)){ hasHVSame=true; break; } } } if(hasHVSame)continue;
-                let neighbors=[]; for(let p=0;p<searchOrder.length;p++){ const {dy,dx}=searchOrder[p]; const ny=y+dy,nx=x+dx; if(ny>=0&&ny<currentRows.length&&nx>=0&&nx<rowWidth){ if(isColored(currentRows[ny],nx)&&!sameColor(currentRows[y],x,currentRows[ny],nx)){ const i=nx*3; neighbors.push({key:getColorKey(currentRows[ny],nx),r:currentRows[ny][i],g:currentRows[ny][i+1],b:currentRows[ny][i+2],prio:p}); } } } const i=x*3;
-                if(neighbors.length===0){ if(nextRows[y][i]!==0||nextRows[y][i+1]!==0||nextRows[y][i+2]!==0){ nextRows[y][i]=0; nextRows[y][i+1]=0; nextRows[y][i+2]=0; changed=true; } }
-                else{ const freq={}; neighbors.forEach(c=>freq[c.key]=(freq[c.key]||0)+1); neighbors.sort((a,b)=>freq[b.key]!==freq[a.key]?freq[b.key]-freq[a.key]:a.prio-b.prio); const ch=neighbors[0]; if(nextRows[y][i]!==ch.r||nextRows[y][i+1]!==ch.g||nextRows[y][i+2]!==ch.b){ nextRows[y][i]=ch.r; nextRows[y][i+1]=ch.g; nextRows[y][i+2]=ch.b; changed=true; } }
+        const h=rows.length;
+        const result=rows.map(r=>new Uint8Array(r));
+        for(let y=0;y<h;y++){
+            for(let x=0;x<rowWidth;x++){
+                if(!isColored(rows[y],x))continue;
+                // Cek apakah ada tetangga H/V (bukan diagonal) dengan warna SAMA persis.
+                // Kalau ada, piksel ini bagian dari garis/blok yang sah -> JANGAN disentuh.
+                let hasSameHVNeighbor=false;
+                for(const d of fourDir){
+                    const ny=y+d.dy, nx=x+d.dx;
+                    if(ny>=0&&ny<h&&nx>=0&&nx<rowWidth){
+                        if(isColored(rows[ny],nx)&&sameColor(rows[y],x,rows[ny],nx)){ hasSameHVNeighbor=true; break; }
+                    }
+                }
+                // Piksel tanpa tetangga H/V sewarna (baik yang benar-benar sendirian,
+                // maupun yang cuma nyambung diagonal) dianggap "titik sendirian" dan
+                // dihapus (dijadikan hitam/background). Diagonal TIDAK dihitung sebagai
+                // sambungan yang valid untuk woven.
+                if(!hasSameHVNeighbor){
+                    const i=x*3;
+                    result[y][i]=0; result[y][i+1]=0; result[y][i+2]=0;
+                }
             }
-            currentRows=nextRows.map(r=>new Uint8Array(r));
-            const nextRows2=currentRows.map(r=>new Uint8Array(r));
-            for(let y=0;y<currentRows.length;y++){ for(let x=0;x<rowWidth;x++){ if(isColored(currentRows[y],x))continue; let neighbors=[]; for(let p=0;p<searchOrder.length;p++){ const {dy,dx}=searchOrder[p]; const ny=y+dy,nx=x+dx; if(ny>=0&&ny<currentRows.length&&nx>=0&&nx<rowWidth){ if(isColored(currentRows[ny],nx)){ const i=nx*3; neighbors.push({key:getColorKey(currentRows[ny],nx),r:currentRows[ny][i],g:currentRows[ny][i+1],b:currentRows[ny][i+2],prio:p}); } } } if(neighbors.length<3)continue; const freq={}; neighbors.forEach(c=>freq[c.key]=(freq[c.key]||0)+1); let maxF=0; for(let k in freq)if(freq[k]>maxF)maxF=freq[k]; if(maxF<3&&!(neighbors.length>=5&&maxF>=2))continue; neighbors.sort((a,b)=>freq[b.key]!==freq[a.key]?freq[b.key]-freq[a.key]:a.prio-b.prio); const chosen=neighbors[0]; const i=x*3; if(nextRows2[y][i]!==chosen.r||nextRows2[y][i+1]!==chosen.g||nextRows2[y][i+2]!==chosen.b){ nextRows2[y][i]=chosen.r; nextRows2[y][i+1]=chosen.g; nextRows2[y][i+2]=chosen.b; changed=true; } } }
-            currentRows=nextRows2; iter++;
         }
-        return currentRows;
+        return result;
+    }
+
+    // Isi lubang hitam yang TERKURUNG PENUH oleh 1 warna yang sama di ke-4 sisi
+    // H/V (atas, bawah, kiri, kanan). Sengaja HANYA 4 arah (bukan 8) dan HANYA
+    // 1 kali proses (tidak diulang-ulang) supaya:
+    // - lubang noise di tengah blok warna solid -> tertutup rapi
+    // - celah/rongga di dalam tulisan atau motif tipis (yang biasanya tidak
+    //   terkurung penuh di ke-4 sisi sekaligus) -> TIDAK ikut tertutup
+    function isiLubangHitamTerkurung(rows, rowWidth) {
+        if (rows.length < 1) return rows;
+        function isColored(row, x) { const i=x*3; return row[i]!==0 || row[i+1]!==0 || row[i+2]!==0; }
+        function sameColor(rowA, xA, rowB, xB) { const a=xA*3,b=xB*3; return rowA[a]===rowB[b] && rowA[a+1]===rowB[b+1] && rowA[a+2]===rowB[b+2]; }
+        const h=rows.length;
+        const result=rows.map(r=>new Uint8Array(r));
+        for(let y=0;y<h;y++){
+            for(let x=0;x<rowWidth;x++){
+                if(isColored(rows[y],x))continue; // hanya proses piksel hitam/background
+                const up=y-1, down=y+1, left=x-1, right=x+1;
+                if(up<0||down>=h||left<0||right>=rowWidth)continue; // tepi gambar, lewati
+                if(!isColored(rows[up],x)||!isColored(rows[down],x)||!isColored(rows[y],left)||!isColored(rows[y],right))continue;
+                // Ke-4 tetangga harus berwarna SAMA PERSIS agar dianggap "lubang" yang valid
+                if(sameColor(rows[up],x,rows[down],x) && sameColor(rows[up],x,rows[y],left) && sameColor(rows[up],x,rows[y],right)){
+                    const i=x*3;
+                    result[y][i]=rows[up][x*3]; result[y][i+1]=rows[up][x*3+1]; result[y][i+2]=rows[up][x*3+2];
+                }
+            }
+        }
+        return result;
     }
 
     const hapusTitikAktif = document.getElementById("hapus-titik-sendiri")?.checked === true;
 
     let cleanedValidRows = validRows;
     if (hapusTitikAktif) {
-        const cleanedRows = hapusTitikSendirian(validRows, width);
+        let cleanedRows = hapusTitikSendirian(validRows, width);
+        cleanedRows = isiLubangHitamTerkurung(cleanedRows, width);
         cleanedValidRows = cleanedRows.filter(row => { for(let i=0;i<row.length;i+=3){ if(row[i]!==0||row[i+1]!==0||row[i+2]!==0)return true; } return false; });
         if (cleanedValidRows.length===0){ alert("Setelah menghapus titik sendirian, tidak ada pola yang tersisa untuk diekspor."); return; }
     }
