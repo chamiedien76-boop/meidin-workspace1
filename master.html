@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
 <meta charset="UTF-8">
-<title>Master File Upload</title>
+<title>Master File & UPT Viewer</title>
 
 <script>
 // EARLY DEFINITION - agar tombol langsung bisa diklik
@@ -117,6 +117,18 @@ window.removeScannedFolder = window.removeScannedFolder || function(){};
   .folder-chip .remove-folder { cursor:pointer; background:#e0eaff; border-radius:50%; width:16px; height:16px; display:inline-flex; align-items:center; justify-content:center; }
   #btn-pilih-file, #btn-pilih-folder { display:none !important; }
 
+
+  /* Preview drag single - bukan upload */
+  #single-preview-drop { 
+    border:2px dashed #1a73e8; background:#f8faff; border-radius:8px; padding:12px; 
+    text-align:center; font-size:11px; color:#1a73e8; font-weight:700; 
+    margin:10px 0; cursor:pointer; transition: all 0.2s;
+  }
+  #single-preview-drop.drag-over { background:#e8f0ff; border-color:#0b57d0; transform: scale(1.02); }
+  #single-preview-drop:hover { background:#eef4ff; }
+  /* Nonaktifkan drag overlay untuk upload */
+  #drag-overlay { display:none !important; }
+
 </style>
 </head>
 <body>
@@ -125,7 +137,7 @@ window.removeScannedFolder = window.removeScannedFolder || function(){};
 
 <div class="page-title">
   <span class="folder-icon">📁</span>
-  <span>Master File Upload</span>
+  <span>Master File & UPT Viewer</span>
 </div>
 
 <div class="toolbar">
@@ -145,7 +157,12 @@ window.removeScannedFolder = window.removeScannedFolder || function(){};
   <button id="btn-pilih-folder" style="display:none;">Folder</button>
   <button class="btn-dropdown" style="display:none;">Semua</button>
 </div>
+<div id="single-preview-drop" onclick="document.getElementById('input-single-preview').click()">
+  👁️ Drag file UPT/JC5/EP kesini untuk Preview Cepat 1-an (atau klik)
+  <input type="file" id="input-single-preview" accept=".upt,.jc5,.ep,.pat" style="display:none;" />
+</div>
 <div id="folder-list-container"></div>
+
 <div id="status-msg"></div>
 
 <div class="data-table-container">
@@ -1429,6 +1446,127 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
   try { window.openPreview = openPreviewFixed; openPreview = openPreviewFixed; } catch(e){ window.openPreview = openPreviewFixed; }
+})();
+
+</script>
+<script>
+
+// === FITUR PREVIEW 1-AN DRAG - BUKAN UPLOAD ===
+(function(){
+  const dropZone = document.getElementById("single-preview-drop");
+  const inputSingle = document.getElementById("input-single-preview");
+  
+  function previewSingleFile(file) {
+    const ext = '.' + file.name.split('.').pop().toLowerCase();
+    const allowed = ['.upt','.jc5','.ep','.pat'];
+    if (!allowed.includes(ext)) {
+      alert("Format tidak didukung! Pakai .upt / .jc5 / .ep / .pat");
+      return;
+    }
+    console.log("[UPT] Single preview:", file.name);
+    if (typeof openPreviewFromFileObject === 'function') {
+      openPreviewFromFileObject(file);
+    } else if (typeof displayPatternModal === 'function') {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const bytes = new Uint8Array(e.target.result);
+        const fileObj = { name: file.name, ext: ext, path: file.name, size: file.size };
+        displayPatternModal(fileObj, bytes);
+      };
+      reader.readAsArrayBuffer(file);
+    }
+  }
+
+  if (dropZone) {
+    dropZone.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      dropZone.classList.add("drag-over");
+      dropZone.textContent = "📂 Lepas file disini untuk preview...";
+    });
+    dropZone.addEventListener("dragleave", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      dropZone.innerHTML = '👁️ Drag file UPT/JC5/EP kesini untuk Preview Cepat 1-an (atau klik)<input type="file" id="input-single-preview" accept=".upt,.jc5,.ep,.pat" style="display:none;" />';
+      // re-attach input listener after innerHTML reset
+      const newInput = document.getElementById("input-single-preview");
+      if (newInput) {
+        newInput.addEventListener("change", (ev) => {
+          const f = ev.target.files[0];
+          if (f) previewSingleFile(f);
+          ev.target.value = "";
+        });
+      }
+    });
+    dropZone.addEventListener("drop", (e) => {
+      e.preventDefault();
+      dropZone.classList.remove("drag-over");
+      dropZone.innerHTML = '👁️ Drag file UPT/JC5/EP kesini untuk Preview Cepat 1-an (atau klik)<input type="file" id="input-single-preview" accept=".upt,.jc5,.ep,.pat" style="display:none;" />';
+      const files = Array.from(e.dataTransfer.files || []);
+      if (files.length > 0) {
+        // Ambil file pertama saja untuk preview 1-an
+        previewSingleFile(files[0]);
+        // re-attach
+        const newInput = document.getElementById("input-single-preview");
+        if (newInput) {
+          newInput.addEventListener("change", (ev) => {
+            const f = ev.target.files[0];
+            if (f) previewSingleFile(f);
+            ev.target.value = "";
+          });
+        }
+      }
+    });
+    // Juga support drag anywhere di body untuk preview (tapi bukan upload)
+    document.body.addEventListener("dragover", (e) => { e.preventDefault(); });
+    document.body.addEventListener("drop", (e) => {
+      // Jika drop di luar dropZone, cek apakah file UPT, langsung preview
+      if (e.target.closest && e.target.closest("#single-preview-drop")) return; // sudah dihandle
+      e.preventDefault();
+      const files = Array.from(e.dataTransfer.files || []);
+      const uptFiles = files.filter(f => {
+        const ext = '.' + f.name.split('.').pop().toLowerCase();
+        return ['.upt','.jc5','.ep','.pat'].includes(ext);
+      });
+      if (uptFiles.length > 0) {
+        previewSingleFile(uptFiles[0]);
+      }
+    });
+  }
+
+  if (inputSingle) {
+    inputSingle.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (file) previewSingleFile(file);
+      e.target.value = "";
+    });
+  }
+
+  // Disable old drag-upload behavior: override existing drag handlers
+  const dragOverlay = document.getElementById("drag-overlay");
+  if (dragOverlay) {
+    dragOverlay.style.display = "none";
+    // Remove old listeners by cloning body? Instead just prevent default upload
+    // Cari dan nonaktifkan handler lama di original script
+    // Kita akan override window handlers
+    window.addEventListener("dragover", (e) => { e.preventDefault(); }, true);
+    window.addEventListener("drop", (e) => {
+      // Jangan proses sebagai upload, hanya preview jika di area preview
+      const isPreviewDrop = e.target.closest && e.target.closest("#single-preview-drop");
+      if (!isPreviewDrop) {
+        // Jika bukan di preview zone, cek apakah ada file UPT, jika ya preview, jika tidak abaikan (jangan upload)
+        const files = e.dataTransfer ? Array.from(e.dataTransfer.files || []) : [];
+        const hasUPT = files.some(f => ['.upt','.jc5','.ep','.pat'].includes('.' + f.name.split('.').pop().toLowerCase()));
+        if (hasUPT) {
+          e.preventDefault();
+          e.stopPropagation();
+          const uptFile = files.find(f => ['.upt','.jc5','.ep','.pat'].includes('.' + f.name.split('.').pop().toLowerCase()));
+          if (uptFile) previewSingleFile(uptFile);
+        }
+      }
+    }, true);
+  }
+
+  console.log("[UPT] Single preview drag ready");
 })();
 
 </script>
